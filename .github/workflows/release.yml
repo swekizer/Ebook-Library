@@ -34,7 +34,7 @@ jobs:
       - name: Verify release version
         shell: bash
         run: |
-          TAG_NAME="${GITHUB_REF_NAME}"
+          TAG_NAME="${GITHUB_REF_NAME#v}"
           MANIFEST_VERSION="$(node -p "require('./manifest.json').version")"
           if [ "$TAG_NAME" != "$MANIFEST_VERSION" ]; then
             echo "Tag version ($TAG_NAME) does not match manifest version ($MANIFEST_VERSION)."
