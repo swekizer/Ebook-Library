@@ -1,7 +1,7 @@
 {
 	"id": "ebook-library",
 	"name": "Ebook Library",
-	"version": "1.0.5",
+	"version": "1.0.6",
 	"minAppVersion": "1.7.2",
 	"description": "A beautiful, central library for the books, manga, magazines and documents in your vault - browse covers, tag and organize, and track reading progress.",
 	"author": "swekizer",
