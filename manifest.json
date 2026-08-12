@@ -1,0 +1,10 @@
+{
+	"id": "ebook-library",
+	"name": "Ebook Library",
+	"version": "1.0.0",
+	"minAppVersion": "1.4.0",
+	"description": "A beautiful, central library for the books, manga, magazines and documents in your vault - browse covers, tag and organize, and track reading progress.",
+	"author": "",
+	"authorUrl": "",
+	"isDesktopOnly": false
+}

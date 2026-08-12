@@ -1,0 +1,484 @@
+import { Menu, Modal, Notice, SliderComponent, TFile, setIcon } from "obsidian";
+import type EbookLibraryPlugin from "../main";
+import {
+	Book,
+	BookCategory,
+	CATEGORY_META,
+	CATEGORY_ORDER,
+	CoverType,
+	NewBookInput,
+	ReadingStatus,
+} from "../types";
+import { clamp, getBasename, placeholderGradient } from "../utils";
+import { ConfirmModal } from "./ConfirmModal";
+import { FileSuggestModal } from "./FileSuggestModal";
+import { PromptModal } from "./PromptModal";
+
+const IMAGE_EXTENSIONS = ["png", "jpg", "jpeg", "gif", "webp", "bmp", "svg"];
+
+export class BookModal extends Modal {
+	private plugin: EbookLibraryPlugin;
+	private existing: Book | null;
+	private onSubmit: (data: NewBookInput) => void | Promise<void>;
+
+	// Form state
+	private filePath: string;
+	private title: string;
+	private author: string;
+	private category: BookCategory;
+	private status: ReadingStatus;
+	private progress: number;
+	private rating: number;
+	private description: string;
+	private tags: string[];
+	private totalPages: number | null;
+	private coverType: CoverType;
+	private cover: string;
+
+	// Element refs updated after initial render
+	private filePathInputEl!: HTMLInputElement;
+	private titleInputEl!: HTMLInputElement;
+	private coverPreviewEl!: HTMLElement;
+	private tagsChipsEl!: HTMLElement;
+	private starsEl!: HTMLElement;
+	private progressLabelEl!: HTMLElement;
+	private progressSlider?: SliderComponent;
+	private statusDropdownEl?: HTMLSelectElement;
+
+	constructor(
+		plugin: EbookLibraryPlugin,
+		existing: Book | null,
+		onSubmit: (data: NewBookInput) => void | Promise<void>
+	) {
+		super(plugin.app);
+		this.plugin = plugin;
+		this.existing = existing;
+		this.onSubmit = onSubmit;
+
+		this.filePath = existing?.filePath ?? "";
+		this.title = existing?.title ?? "";
+		this.author = existing?.author ?? "";
+		this.category = existing?.category ?? "book";
+		this.status = existing?.status ?? "unread";
+		this.progress = existing?.progress ?? 0;
+		this.rating = existing?.rating ?? 0;
+		this.description = existing?.description ?? "";
+		this.tags = existing ? [...existing.tags] : [];
+		this.totalPages = existing?.totalPages ?? null;
+		this.coverType = existing?.coverType ?? "none";
+		this.cover = existing?.cover ?? "";
+	}
+
+	onOpen(): void {
+		const { contentEl } = this;
+		contentEl.addClass("el-book-modal");
+		this.titleEl.setText(this.existing ? "Edit book" : "Add a new book");
+
+		const layout = contentEl.createDiv({ cls: "el-modal-layout" });
+
+		this.buildCoverSection(layout);
+		this.buildFormSection(layout);
+		this.buildButtons(contentEl);
+	}
+
+	onClose(): void {
+		this.contentEl.empty();
+	}
+
+	// ---------- Cover ----------
+
+	private buildCoverSection(parent: HTMLElement) {
+		const section = parent.createDiv({ cls: "el-modal-cover-section" });
+		this.coverPreviewEl = section.createDiv({ cls: "el-modal-cover-preview" });
+		this.renderCoverPreview();
+
+		const changeBtn = section.createEl("button", {
+			cls: "el-modal-cover-btn",
+			text: "Change cover",
+		});
+		changeBtn.addEventListener("click", (evt) => this.showCoverMenu(evt));
+	}
+
+	private renderCoverPreview() {
+		this.coverPreviewEl.empty();
+		this.coverPreviewEl.removeClass("el-cover-placeholder");
+		this.coverPreviewEl.style.background = "";
+
+		const src = this.resolveCoverSrc();
+		if (src) {
+			const img = this.coverPreviewEl.createEl("img", { cls: "el-modal-cover-img" });
+			img.alt = this.title || "Cover";
+			img.onerror = () => {
+				this.coverType = "none";
+				this.cover = "";
+				this.renderCoverPreview();
+			};
+			img.src = src;
+			return;
+		}
+
+		this.coverPreviewEl.addClass("el-cover-placeholder");
+		this.coverPreviewEl.style.background = placeholderGradient(this.title || this.filePath);
+		const iconWrap = this.coverPreviewEl.createDiv({ cls: "el-cover-placeholder-icon" });
+		setIcon(iconWrap, CATEGORY_META[this.category].icon);
+		this.coverPreviewEl.createDiv({
+			cls: "el-cover-placeholder-title",
+			text: this.title || "Untitled",
+		});
+	}
+
+	private resolveCoverSrc(): string | null {
+		if (this.coverType === "url" && this.cover) return this.cover;
+		if (this.coverType === "vault" && this.cover) {
+			const file = this.plugin.app.vault.getAbstractFileByPath(this.cover);
+			if (file instanceof TFile) return this.plugin.app.vault.getResourcePath(file);
+		}
+		return null;
+	}
+
+	private showCoverMenu(evt: MouseEvent) {
+		const menu = new Menu();
+		menu.addItem((item) =>
+			item
+				.setTitle("Choose image from vault")
+				.setIcon("image")
+				.onClick(() => {
+					new FileSuggestModal(
+						this.plugin.app,
+						(file) => {
+							this.coverType = "vault";
+							this.cover = file.path;
+							this.renderCoverPreview();
+						},
+						IMAGE_EXTENSIONS
+					).open();
+				})
+		);
+		menu.addItem((item) =>
+			item
+				.setTitle("Use image URL")
+				.setIcon("link")
+				.onClick(() => {
+					new PromptModal(this.plugin.app, {
+						title: "Cover image URL",
+						placeholder: "https://example.com/cover.jpg",
+						initialValue: this.coverType === "url" ? this.cover : "",
+						submitText: "Set cover",
+						onSubmit: (value) => {
+							if (value) {
+								this.coverType = "url";
+								this.cover = value;
+								this.renderCoverPreview();
+							}
+						},
+					}).open();
+				})
+		);
+		if (this.coverType !== "none") {
+			menu.addItem((item) =>
+				item
+					.setTitle("Remove cover")
+					.setIcon("x")
+					.onClick(() => {
+						this.coverType = "none";
+						this.cover = "";
+						this.renderCoverPreview();
+					})
+			);
+		}
+		menu.showAtMouseEvent(evt);
+	}
+
+	// ---------- Form ----------
+
+	private buildFormSection(parent: HTMLElement) {
+		const form = parent.createDiv({ cls: "el-modal-form" });
+
+		this.buildFileField(form);
+		this.buildTextField(form, "Title", this.title, "Book title", (v) => {
+			this.title = v;
+			this.renderCoverPreview();
+		}, (inputEl) => (this.titleInputEl = inputEl));
+		this.buildTextField(form, "Author", this.author, "Author name", (v) => (this.author = v));
+		this.buildCategoryField(form);
+		this.buildTagsField(form);
+		this.buildDescriptionField(form);
+		this.buildStatusField(form);
+		this.buildProgressField(form);
+		this.buildTotalPagesField(form);
+		this.buildRatingField(form);
+	}
+
+	private buildFileField(form: HTMLElement) {
+		const row = form.createDiv({ cls: "el-field" });
+		row.createDiv({ cls: "el-field-label", text: "Book file" });
+		row.createDiv({
+			cls: "el-field-desc",
+			text: "The file in your vault this entry points to.",
+		});
+		const controls = row.createDiv({ cls: "el-field-control el-field-control-row" });
+		this.filePathInputEl = controls.createEl("input", {
+			type: "text",
+			cls: "el-text-input",
+			placeholder: "path/to/book.pdf",
+			value: this.filePath,
+		});
+		this.filePathInputEl.addEventListener("input", () => {
+			this.filePath = this.filePathInputEl.value;
+		});
+		const browseBtn = controls.createEl("button", { cls: "el-icon-btn", attr: { "aria-label": "Browse vault" } });
+		setIcon(browseBtn, "folder-open");
+		browseBtn.addEventListener("click", () => {
+			new FileSuggestModal(this.plugin.app, (file) => {
+				this.filePath = file.path;
+				this.filePathInputEl.value = file.path;
+				if (!this.title.trim()) {
+					this.title = getBasename(file.path);
+					this.titleInputEl.value = this.title;
+					this.renderCoverPreview();
+				}
+			}).open();
+		});
+	}
+
+	private buildTextField(
+		form: HTMLElement,
+		label: string,
+		initial: string,
+		placeholder: string,
+		onChange: (value: string) => void,
+		captureEl?: (el: HTMLInputElement) => void
+	) {
+		const row = form.createDiv({ cls: "el-field" });
+		row.createDiv({ cls: "el-field-label", text: label });
+		const input = row.createDiv({ cls: "el-field-control" }).createEl("input", {
+			type: "text",
+			cls: "el-text-input",
+			placeholder,
+			value: initial,
+		});
+		input.addEventListener("input", () => onChange(input.value));
+		if (captureEl) captureEl(input);
+	}
+
+	private buildCategoryField(form: HTMLElement) {
+		const row = form.createDiv({ cls: "el-field" });
+		row.createDiv({ cls: "el-field-label", text: "Category" });
+		const select = row.createDiv({ cls: "el-field-control" }).createEl("select", { cls: "el-select" });
+		for (const cat of CATEGORY_ORDER) {
+			select.createEl("option", { value: cat, text: CATEGORY_META[cat].label });
+		}
+		select.value = this.category;
+		select.addEventListener("change", () => {
+			this.category = select.value as BookCategory;
+			this.renderCoverPreview();
+		});
+	}
+
+	private buildTagsField(form: HTMLElement) {
+		const row = form.createDiv({ cls: "el-field" });
+		row.createDiv({ cls: "el-field-label", text: "Tags" });
+		row.createDiv({ cls: "el-field-desc", text: "Press Enter or comma to add a tag." });
+		const control = row.createDiv({ cls: "el-field-control" });
+		const field = control.createDiv({ cls: "el-tags-field" });
+		this.tagsChipsEl = field.createDiv({ cls: "el-tags-chips" });
+		const tagInput = field.createEl("input", {
+			cls: "el-tags-input",
+			type: "text",
+			placeholder: "Add a tag...",
+		});
+		tagInput.addEventListener("keydown", (evt) => {
+			if (evt.key === "Enter" || evt.key === ",") {
+				evt.preventDefault();
+				this.addTag(tagInput.value);
+				tagInput.value = "";
+			} else if (evt.key === "Backspace" && tagInput.value === "" && this.tags.length > 0) {
+				this.tags.pop();
+				this.renderTagChips();
+			}
+		});
+		this.renderTagChips();
+
+		const suggestions = this.plugin.getAllTags().filter((t) => !this.tags.includes(t));
+		if (suggestions.length > 0) {
+			const presetWrap = control.createDiv({ cls: "el-tags-suggestions" });
+			presetWrap.createSpan({ cls: "el-tags-suggestions-label", text: "Suggestions:" });
+			for (const tag of suggestions.slice(0, 12)) {
+				const pill = presetWrap.createEl("button", { cls: "el-tag-pill el-tag-suggestion", text: tag });
+				pill.addEventListener("click", () => {
+					this.addTag(tag);
+					pill.remove();
+				});
+			}
+		}
+	}
+
+	private addTag(raw: string) {
+		const tag = raw.trim().replace(/,/g, "");
+		if (!tag) return;
+		if (this.tags.some((t) => t.toLowerCase() === tag.toLowerCase())) return;
+		this.tags.push(tag);
+		this.renderTagChips();
+	}
+
+	private renderTagChips() {
+		this.tagsChipsEl.empty();
+		for (const tag of this.tags) {
+			const chip = this.tagsChipsEl.createDiv({ cls: "el-tag-chip" });
+			chip.createSpan({ text: tag });
+			const remove = chip.createSpan({ cls: "el-tag-chip-remove" });
+			setIcon(remove, "x");
+			remove.addEventListener("click", () => {
+				this.tags = this.tags.filter((t) => t !== tag);
+				this.renderTagChips();
+			});
+		}
+	}
+
+	private buildDescriptionField(form: HTMLElement) {
+		const row = form.createDiv({ cls: "el-field" });
+		row.createDiv({ cls: "el-field-label", text: "Description" });
+		const textarea = row.createDiv({ cls: "el-field-control" }).createEl("textarea", {
+			cls: "el-textarea",
+			placeholder: "What's this book about?",
+		});
+		textarea.rows = 4;
+		textarea.value = this.description;
+		textarea.addEventListener("input", () => (this.description = textarea.value));
+	}
+
+	private buildStatusField(form: HTMLElement) {
+		const row = form.createDiv({ cls: "el-field" });
+		row.createDiv({ cls: "el-field-label", text: "Reading status" });
+		const select = row.createDiv({ cls: "el-field-control" }).createEl("select", { cls: "el-select" });
+		select.createEl("option", { value: "unread", text: "Unread" });
+		select.createEl("option", { value: "reading", text: "Reading" });
+		select.createEl("option", { value: "completed", text: "Completed" });
+		select.value = this.status;
+		this.statusDropdownEl = select;
+		select.addEventListener("change", () => {
+			this.status = select.value as ReadingStatus;
+			if (this.status === "unread") this.progress = 0;
+			if (this.status === "completed") this.progress = 100;
+			this.progressSlider?.setValue(this.progress);
+			this.progressLabelEl?.setText(`${this.progress}%`);
+		});
+	}
+
+	private buildProgressField(form: HTMLElement) {
+		const row = form.createDiv({ cls: "el-field" });
+		row.createDiv({ cls: "el-field-label", text: "Progress" });
+		const control = row.createDiv({ cls: "el-field-control el-field-control-row" });
+		this.progressLabelEl = control.createSpan({ cls: "el-progress-label", text: `${this.progress}%` });
+		const sliderWrap = control.createDiv({ cls: "el-slider-wrap" });
+		this.progressSlider = new SliderComponent(sliderWrap)
+			.setLimits(0, 100, 1)
+			.setValue(this.progress)
+			.onChange((value) => {
+				this.progress = value;
+				this.progressLabelEl.setText(`${value}%`);
+				if (value === 0) this.status = "unread";
+				else if (value === 100) this.status = "completed";
+				else this.status = "reading";
+				if (this.statusDropdownEl) this.statusDropdownEl.value = this.status;
+			});
+	}
+
+	private buildTotalPagesField(form: HTMLElement) {
+		const row = form.createDiv({ cls: "el-field" });
+		row.createDiv({ cls: "el-field-label", text: "Total pages" });
+		row.createDiv({ cls: "el-field-desc", text: "Optional" });
+		const input = row.createDiv({ cls: "el-field-control" }).createEl("input", {
+			cls: "el-text-input",
+			type: "number",
+			placeholder: "e.g. 320",
+		});
+		if (this.totalPages) input.value = String(this.totalPages);
+		input.addEventListener("input", () => {
+			const n = parseInt(input.value, 10);
+			this.totalPages = isNaN(n) || n <= 0 ? null : n;
+		});
+	}
+
+	private buildRatingField(form: HTMLElement) {
+		const row = form.createDiv({ cls: "el-field" });
+		row.createDiv({ cls: "el-field-label", text: "Rating" });
+		this.starsEl = row.createDiv({ cls: "el-field-control" }).createDiv({ cls: "el-star-rating" });
+		this.renderStars();
+	}
+
+	private renderStars() {
+		this.starsEl.empty();
+		for (let i = 1; i <= 5; i++) {
+			const star = this.starsEl.createSpan({ cls: "el-star", attr: { "aria-label": `${i} star` } });
+			setIcon(star, "star");
+			star.toggleClass("is-filled", i <= this.rating);
+			star.addEventListener("click", () => {
+				this.rating = this.rating === i ? 0 : i;
+				this.renderStars();
+			});
+		}
+	}
+
+	// ---------- Buttons ----------
+
+	private buildButtons(parent: HTMLElement) {
+		const buttons = parent.createDiv({ cls: "el-modal-buttons" });
+
+		if (this.existing) {
+			const deleteBtn = buttons.createEl("button", { cls: "el-btn-danger", text: "Delete" });
+			deleteBtn.addEventListener("click", () => {
+				new ConfirmModal(this.plugin.app, {
+					title: "Remove from library",
+					message: `Remove "${this.existing!.title}" from your library? The underlying file is not deleted.`,
+					confirmText: "Remove",
+					onConfirm: async () => {
+						await this.plugin.removeBook(this.existing!.id);
+						this.close();
+					},
+				}).open();
+			});
+		}
+
+		buttons.createDiv({ cls: "el-modal-buttons-spacer" });
+
+		const cancelBtn = buttons.createEl("button", { text: "Cancel" });
+		cancelBtn.addEventListener("click", () => this.close());
+
+		const saveBtn = buttons.createEl("button", {
+			cls: "mod-cta",
+			text: this.existing ? "Save changes" : "Add to library",
+		});
+		saveBtn.addEventListener("click", () => this.handleSave());
+	}
+
+	private async handleSave() {
+		if (!this.filePath.trim()) {
+			new Notice("Please choose a book file");
+			return;
+		}
+		if (!this.title.trim()) {
+			new Notice("Please enter a title");
+			return;
+		}
+
+		const data: NewBookInput = {
+			filePath: this.filePath.trim(),
+			title: this.title.trim(),
+			author: this.author.trim(),
+			coverType: this.coverType,
+			cover: this.cover,
+			description: this.description.trim(),
+			tags: this.tags,
+			category: this.category,
+			status: this.status,
+			progress: clamp(this.progress, 0, 100),
+			rating: this.rating,
+			totalPages: this.totalPages,
+			lastOpened: this.existing?.lastOpened ?? null,
+		};
+
+		await this.onSubmit(data);
+		this.close();
+	}
+}
