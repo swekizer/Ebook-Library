@@ -16,7 +16,7 @@
 		"books",
 		"reading"
 	],
-	"author": "",
+	"author": "swekizer",
 	"license": "MIT",
 	"devDependencies": {
 		"@types/node": "^20.11.5",
