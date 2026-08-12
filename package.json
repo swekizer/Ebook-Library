@@ -1,6 +1,6 @@
 {
 	"name": "ebook-library",
-	"version": "1.0.1",
+	"version": "1.0.2",
 	"description": "A beautiful ebook library for Obsidian - browse, organize and track books, manga, magazines and documents.",
 	"main": "main.js",
 	"scripts": {
