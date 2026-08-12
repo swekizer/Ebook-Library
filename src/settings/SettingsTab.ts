@@ -1,7 +1,6 @@
-import { App, Notice, PluginSettingTab, Setting } from "obsidian";
+import { App, Notice, PluginSettingTab, SettingDefinitionItem } from "obsidian";
 import type EbookLibraryPlugin from "../main";
 import { ConfirmModal } from "../modals/ConfirmModal";
-import { CardSize } from "../types";
 
 export class EbookLibrarySettingTab extends PluginSettingTab {
 	plugin: EbookLibraryPlugin;
@@ -11,88 +10,98 @@ export class EbookLibrarySettingTab extends PluginSettingTab {
 		this.plugin = plugin;
 	}
 
-	display(): void {
-		const { containerEl } = this;
-		containerEl.empty();
+	getSettingDefinitions(): SettingDefinitionItem[] {
+		return [
+			{
+				name: "Library title",
+				desc: "The big title shown at the top of your library view.",
+				control: {
+					type: "text",
+					key: "libraryTitle",
+					placeholder: "Library",
+				},
+			},
+			{
+				name: "Card size",
+				desc: "Size of book covers in the library grid.",
+				control: {
+					type: "dropdown",
+					key: "cardSize",
+					options: { small: "Small", medium: "Medium", large: "Large" },
+				},
+			},
+			{
+				name: "Open library on startup",
+				desc: "Automatically open your library when Obsidian starts.",
+				control: {
+					type: "toggle",
+					key: "openOnStartup",
+				},
+			},
+			{
+				type: "group",
+				heading: "Backup",
+				items: [
+					{
+						name: "Export library data",
+						desc: "Save all your book entries as a JSON file in the vault.",
+						render: (setting) => {
+							setting.addButton((btn) =>
+								btn.setButtonText("Export").onClick(() => {
+									void this.exportLibrary();
+								})
+							);
+						},
+					},
+				],
+			},
+			{
+				type: "group",
+				heading: "Danger zone",
+				items: [
+					{
+						name: "Clear all books",
+						desc: "Remove every book from your library. This cannot be undone.",
+						render: (setting) => {
+							setting.addButton((btn) =>
+								btn
+									.setButtonText("Clear library")
+									.setDestructive()
+									.onClick(() => {
+										new ConfirmModal(this.app, {
+											title: "Clear library",
+											message: "Remove all books from your library? This cannot be undone.",
+											confirmText: "Clear library",
+											onConfirm: async () => {
+												this.plugin.settings.books = [];
+												await this.plugin.saveSettings();
+												this.plugin.refreshViews();
+												new Notice("Library cleared");
+											},
+										}).open();
+									})
+							);
+						},
+					},
+				],
+			},
+		];
+	}
 
-		new Setting(containerEl)
-			.setName("Library title")
-			.setDesc("The big title shown at the top of your library view.")
-			.addText((text) =>
-				text
-					.setPlaceholder("Library")
-					.setValue(this.plugin.settings.libraryTitle)
-					.onChange(async (value) => {
-						this.plugin.settings.libraryTitle = value || "Library";
-						await this.plugin.saveSettings();
-						this.plugin.refreshViews();
-					})
-			);
+	/** Persist via the default behavior, then keep any open library view in sync. */
+	async setControlValue(key: string, value: unknown): Promise<void> {
+		await super.setControlValue(key, value);
+		this.plugin.refreshViews();
+	}
 
-		new Setting(containerEl)
-			.setName("Card size")
-			.setDesc("Size of book covers in the library grid.")
-			.addDropdown((drop) =>
-				drop
-					.addOptions({ small: "Small", medium: "Medium", large: "Large" })
-					.setValue(this.plugin.settings.cardSize)
-					.onChange(async (value) => {
-						this.plugin.settings.cardSize = value as CardSize;
-						await this.plugin.saveSettings();
-						this.plugin.refreshViews();
-					})
-			);
-
-		new Setting(containerEl)
-			.setName("Open library on startup")
-			.setDesc("Automatically open your library when Obsidian starts.")
-			.addToggle((toggle) =>
-				toggle.setValue(this.plugin.settings.openOnStartup).onChange(async (value) => {
-					this.plugin.settings.openOnStartup = value;
-					await this.plugin.saveSettings();
-				})
-			);
-
-		new Setting(containerEl).setName("Backup").setHeading();
-
-		new Setting(containerEl)
-			.setName("Export library data")
-			.setDesc("Save all your book entries as a JSON file in the vault.")
-			.addButton((btn) =>
-				btn.setButtonText("Export").onClick(async () => {
-					const json = JSON.stringify(this.plugin.settings.books, null, 2);
-					const path = `Ebook Library Backup ${new Date().toISOString().slice(0, 10)}.json`;
-					try {
-						await this.app.vault.create(path, json);
-						new Notice(`Exported to "${path}"`);
-					} catch (e) {
-						new Notice(`Export failed: ${(e as Error).message}`);
-					}
-				})
-			);
-
-		new Setting(containerEl).setName("Danger zone").setHeading();
-
-		new Setting(containerEl)
-			.setName("Clear all books")
-			.setDesc("Remove every book from your library. This cannot be undone.")
-			.addButton((btn) =>
-				btn
-					.setButtonText("Clear library")
-					.setDestructive()
-					.onClick(() => {
-						new ConfirmModal(this.app, {
-							title: "Clear library",
-							message: "Remove all books from your library? This cannot be undone.",
-							confirmText: "Clear library",
-							onConfirm: async () => {
-								this.plugin.settings.books = [];
-								await this.plugin.saveSettings();
-								this.plugin.refreshViews();
-								new Notice("Library cleared");
-							},
-						}).open();
-					})
-			);
+	private async exportLibrary(): Promise<void> {
+		const json = JSON.stringify(this.plugin.settings.books, null, 2);
+		const path = `Ebook Library Backup ${new Date().toISOString().slice(0, 10)}.json`;
+		try {
+			await this.app.vault.create(path, json);
+			new Notice(`Exported to "${path}"`);
+		} catch (e) {
+			new Notice(`Export failed: ${(e as Error).message}`);
+		}
 	}
 }
