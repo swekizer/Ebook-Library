@@ -48,10 +48,10 @@ npm run dev      # watches src/ and rebuilds on save
 This repo supports tag-based GitHub releases for Obsidian.
 
 1. Finish your code changes.
-2. Bump the plugin version:
+2. Bump the plugin version without the leading `v` prefix. Obsidian expects release tags like `1.0.2`, not `v1.0.2`.
 
 ```bash
-npm version patch
+npm version patch --tag-version-prefix=""
 ```
 
 Use `minor` or `major` when needed.

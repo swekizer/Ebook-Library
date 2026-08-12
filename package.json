@@ -6,7 +6,10 @@
 	"scripts": {
 		"dev": "node esbuild.config.mjs",
 		"build": "tsc -noEmit -skipLibCheck && node esbuild.config.mjs production",
-		"version": "node version-bump.mjs && git add manifest.json versions.json"
+		"version": "node version-bump.mjs && git add manifest.json versions.json",
+		"release:patch": "npm version patch --tag-version-prefix=\"\"",
+		"release:minor": "npm version minor --tag-version-prefix=\"\"",
+		"release:major": "npm version major --tag-version-prefix=\"\""
 	},
 	"keywords": [
 		"obsidian",
