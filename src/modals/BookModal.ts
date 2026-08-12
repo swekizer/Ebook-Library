@@ -102,7 +102,7 @@ export class BookModal extends Modal {
 	private renderCoverPreview() {
 		this.coverPreviewEl.empty();
 		this.coverPreviewEl.removeClass("el-cover-placeholder");
-		this.coverPreviewEl.style.background = "";
+		this.coverPreviewEl.setCssStyles({ background: "" });
 
 		const src = this.resolveCoverSrc();
 		if (src) {
@@ -118,7 +118,7 @@ export class BookModal extends Modal {
 		}
 
 		this.coverPreviewEl.addClass("el-cover-placeholder");
-		this.coverPreviewEl.style.background = placeholderGradient(this.title || this.filePath);
+		this.coverPreviewEl.setCssStyles({ background: placeholderGradient(this.title || this.filePath) });
 		const iconWrap = this.coverPreviewEl.createDiv({ cls: "el-cover-placeholder-icon" });
 		setIcon(iconWrap, CATEGORY_META[this.category].icon);
 		this.coverPreviewEl.createDiv({
@@ -449,7 +449,9 @@ export class BookModal extends Modal {
 			cls: "mod-cta",
 			text: this.existing ? "Save changes" : "Add to library",
 		});
-		saveBtn.addEventListener("click", () => this.handleSave());
+		saveBtn.addEventListener("click", () => {
+			void this.handleSave();
+		});
 	}
 
 	private async handleSave() {

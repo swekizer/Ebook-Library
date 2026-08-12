@@ -1,5 +1,3 @@
-import { App, FileSystemAdapter, Notice, Platform } from "obsidian";
-
 export function generateId(): string {
 	return `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 10)}`;
 }
@@ -53,40 +51,13 @@ export function clamp(value: number, min: number, max: number): number {
 	return Math.max(min, Math.min(max, value));
 }
 
-export function debounce<T extends (...args: any[]) => void>(fn: T, delay: number): T {
+export function debounce<T extends (...args: unknown[]) => void>(
+	fn: T,
+	delay: number
+): (...args: Parameters<T>) => void {
 	let timer: number | undefined;
-	return ((...args: any[]) => {
+	return (...args: Parameters<T>) => {
 		if (timer) window.clearTimeout(timer);
 		timer = window.setTimeout(() => fn(...args), delay);
-	}) as T;
-}
-
-/** Reveals a vault file in the OS file explorer. Desktop only. */
-export function revealInSystemExplorer(app: App, filePath: string): void {
-	if (!Platform.isDesktopApp) return;
-	const adapter = app.vault.adapter;
-	if (!(adapter instanceof FileSystemAdapter)) return;
-	try {
-		const fullPath = adapter.getFullPath(filePath);
-		const electron = require("electron");
-		electron.shell.showItemInFolder(fullPath);
-	} catch (e) {
-		new Notice("Could not open the system file explorer.");
-	}
-}
-
-/** Opens a vault file with the OS default application. Desktop only. */
-export function openInDefaultApp(app: App, filePath: string): void {
-	if (!Platform.isDesktopApp) return;
-	const adapter = app.vault.adapter;
-	if (!(adapter instanceof FileSystemAdapter)) return;
-	try {
-		const fullPath = adapter.getFullPath(filePath);
-		const electron = require("electron");
-		electron.shell.openPath(fullPath).then((err: string) => {
-			if (err) new Notice(`Could not open file: ${err}`);
-		});
-	} catch (e) {
-		new Notice("Could not open file in the default app.");
-	}
+	};
 }

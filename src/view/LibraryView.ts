@@ -1,4 +1,4 @@
-import { ItemView, Menu, Platform, TFile, WorkspaceLeaf, setIcon } from "obsidian";
+import { ItemView, Menu, TFile, WorkspaceLeaf, setIcon } from "obsidian";
 import type EbookLibraryPlugin from "../main";
 import {
 	Book,
@@ -10,7 +10,7 @@ import {
 } from "../types";
 import { BookModal } from "../modals/BookModal";
 import { ConfirmModal } from "../modals/ConfirmModal";
-import { clamp, debounce, openInDefaultApp, placeholderGradient, revealInSystemExplorer } from "../utils";
+import { clamp, debounce, placeholderGradient } from "../utils";
 
 export const VIEW_TYPE_LIBRARY = "ebook-library-view";
 
@@ -134,7 +134,7 @@ export class LibraryView extends ItemView {
 		this.sortSelectEl.value = this.plugin.settings.sortKey;
 		this.sortSelectEl.addEventListener("change", () => {
 			this.plugin.settings.sortKey = this.sortSelectEl.value as SortKey;
-			this.plugin.saveSettings();
+			void this.plugin.saveSettings();
 			this.render();
 		});
 
@@ -145,7 +145,7 @@ export class LibraryView extends ItemView {
 		setIcon(this.sortDirBtn, "arrow-up-down");
 		this.sortDirBtn.addEventListener("click", () => {
 			this.plugin.settings.sortDirection = this.plugin.settings.sortDirection === "asc" ? "desc" : "asc";
-			this.plugin.saveSettings();
+			void this.plugin.saveSettings();
 			this.render();
 		});
 
@@ -316,7 +316,9 @@ export class LibraryView extends ItemView {
 
 		if (book.progress > 0) {
 			const track = cover.createDiv({ cls: "el-card-progress-track" });
-			track.createDiv({ cls: "el-card-progress-fill" }).style.width = `${clamp(book.progress, 0, 100)}%`;
+			track.createDiv({ cls: "el-card-progress-fill" }).setCssStyles({
+				width: `${clamp(book.progress, 0, 100)}%`,
+			});
 		}
 
 		const moreBtn = card.createEl("button", { cls: "el-card-more", attr: { "aria-label": "More options" } });
@@ -344,11 +346,13 @@ export class LibraryView extends ItemView {
 			}
 		}
 
-		card.addEventListener("click", () => this.plugin.openBook(book));
+		card.addEventListener("click", () => {
+			void this.plugin.openBook(book);
+		});
 		card.addEventListener("keydown", (evt) => {
 			if (evt.key === "Enter" || evt.key === " ") {
 				evt.preventDefault();
-				this.plugin.openBook(book);
+				void this.plugin.openBook(book);
 			}
 		});
 		card.addEventListener("contextmenu", (evt) => {
@@ -386,7 +390,7 @@ export class LibraryView extends ItemView {
 	private renderPlaceholderCover(container: HTMLElement, book: Book) {
 		container.empty();
 		container.addClass("el-cover-placeholder");
-		container.style.background = placeholderGradient(book.title || book.filePath);
+		container.setCssStyles({ background: placeholderGradient(book.title || book.filePath) });
 		const iconWrap = container.createDiv({ cls: "el-cover-placeholder-icon" });
 		setIcon(iconWrap, CATEGORY_META[book.category]?.icon ?? "book");
 		container.createDiv({ cls: "el-cover-placeholder-title", text: book.title });
@@ -395,7 +399,14 @@ export class LibraryView extends ItemView {
 	private showCardMenu(evt: MouseEvent, book: Book) {
 		const menu = new Menu();
 
-		menu.addItem((item) => item.setTitle("Open").setIcon("book-open").onClick(() => this.plugin.openBook(book)));
+		menu.addItem((item) =>
+			item
+				.setTitle("Open")
+				.setIcon("book-open")
+				.onClick(() => {
+					void this.plugin.openBook(book);
+				})
+		);
 		menu.addItem((item) =>
 			item.setTitle("Edit details").setIcon("pencil").onClick(() => this.openEditModal(book))
 		);
@@ -407,21 +418,27 @@ export class LibraryView extends ItemView {
 				.setTitle("Mark as unread")
 				.setIcon("circle")
 				.setChecked(book.status === "unread")
-				.onClick(() => this.plugin.updateBook(book.id, { status: "unread", progress: 0 }))
+				.onClick(() => {
+					void this.plugin.updateBook(book.id, { status: "unread", progress: 0 });
+				})
 		);
 		menu.addItem((item) =>
 			item
 				.setTitle("Mark as reading")
 				.setIcon("book-open")
 				.setChecked(book.status === "reading")
-				.onClick(() => this.plugin.updateBook(book.id, { status: "reading" }))
+				.onClick(() => {
+					void this.plugin.updateBook(book.id, { status: "reading" });
+				})
 		);
 		menu.addItem((item) =>
 			item
 				.setTitle("Mark as completed")
 				.setIcon("check-circle")
 				.setChecked(book.status === "completed")
-				.onClick(() => this.plugin.updateBook(book.id, { status: "completed", progress: 100 }))
+				.onClick(() => {
+					void this.plugin.updateBook(book.id, { status: "completed", progress: 100 });
+				})
 		);
 
 		menu.addSeparator();
@@ -431,28 +448,12 @@ export class LibraryView extends ItemView {
 				item
 					.setTitle(`Set progress to ${step}%`)
 					.setChecked(book.progress === step)
-					.onClick(() =>
-						this.plugin.updateBook(book.id, {
+					.onClick(() => {
+						void this.plugin.updateBook(book.id, {
 							progress: step,
 							status: step === 0 ? "unread" : step === 100 ? "completed" : "reading",
-						})
-					)
-			);
-		}
-
-		if (Platform.isDesktopApp) {
-			menu.addSeparator();
-			menu.addItem((item) =>
-				item
-					.setTitle("Open in default app")
-					.setIcon("external-link")
-					.onClick(() => openInDefaultApp(this.plugin.app, book.filePath))
-			);
-			menu.addItem((item) =>
-				item
-					.setTitle("Reveal in system explorer")
-					.setIcon("folder-open")
-					.onClick(() => revealInSystemExplorer(this.plugin.app, book.filePath))
+						});
+					})
 			);
 		}
 

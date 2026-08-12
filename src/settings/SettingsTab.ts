@@ -79,7 +79,7 @@ export class EbookLibrarySettingTab extends PluginSettingTab {
 			.addButton((btn) =>
 				btn
 					.setButtonText("Clear library")
-					.setWarning()
+					.setDestructive()
 					.onClick(() => {
 						new ConfirmModal(this.app, {
 							title: "Clear library",

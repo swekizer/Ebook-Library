@@ -14,13 +14,15 @@ export default class EbookLibraryPlugin extends Plugin {
 		this.registerView(VIEW_TYPE_LIBRARY, (leaf) => new LibraryView(leaf, this));
 
 		this.addRibbonIcon("library", "Open ebook library", () => {
-			this.activateView();
+			void this.activateView();
 		});
 
 		this.addCommand({
-			id: "open-ebook-library",
+			id: "open-library",
 			name: "Open library",
-			callback: () => this.activateView(),
+			callback: () => {
+				void this.activateView();
+			},
 		});
 
 		this.addCommand({
@@ -47,7 +49,7 @@ export default class EbookLibraryPlugin extends Plugin {
 					}
 				}
 				if (changed) {
-					this.saveSettings();
+					void this.saveSettings();
 					this.refreshViews();
 				}
 			})
@@ -55,7 +57,7 @@ export default class EbookLibraryPlugin extends Plugin {
 
 		this.app.workspace.onLayoutReady(() => {
 			if (this.settings.openOnStartup) {
-				this.activateView();
+				void this.activateView();
 			}
 		});
 	}
@@ -65,8 +67,8 @@ export default class EbookLibraryPlugin extends Plugin {
 	}
 
 	async loadSettings() {
-		const data = await this.loadData();
-		this.settings = Object.assign({}, DEFAULT_SETTINGS, data);
+		const data = (await this.loadData()) as Partial<EbookLibrarySettings> | null;
+		this.settings = Object.assign({}, DEFAULT_SETTINGS, data ?? {});
 		if (!Array.isArray(this.settings.books)) this.settings.books = [];
 	}
 
@@ -77,18 +79,18 @@ export default class EbookLibraryPlugin extends Plugin {
 	async activateView() {
 		const existing = this.app.workspace.getLeavesOfType(VIEW_TYPE_LIBRARY);
 		if (existing.length > 0) {
-			this.app.workspace.revealLeaf(existing[0]);
+			await this.app.workspace.revealLeaf(existing[0]);
 			return;
 		}
 		const leaf = this.app.workspace.getLeaf("tab");
 		await leaf.setViewState({ type: VIEW_TYPE_LIBRARY, active: true });
-		this.app.workspace.revealLeaf(leaf);
+		await this.app.workspace.revealLeaf(leaf);
 	}
 
 	openAddBookModal() {
 		new BookModal(this, null, async (data) => {
 			await this.addBook(data);
-			this.activateView();
+			await this.activateView();
 		}).open();
 	}
 

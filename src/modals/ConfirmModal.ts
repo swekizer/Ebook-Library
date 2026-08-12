@@ -5,7 +5,7 @@ interface ConfirmModalOptions {
 	message: string;
 	confirmText?: string;
 	cancelText?: string;
-	onConfirm: () => void;
+	onConfirm: () => void | Promise<void>;
 }
 
 export class ConfirmModal extends Modal {
@@ -31,7 +31,10 @@ export class ConfirmModal extends Modal {
 			cls: "mod-warning",
 		});
 		confirmBtn.addEventListener("click", () => {
-			this.options.onConfirm();
+			const result = this.options.onConfirm();
+			if (result instanceof Promise) {
+				result.catch((err: unknown) => console.error("Ebook Library:", err));
+			}
 			this.close();
 		});
 
