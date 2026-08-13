@@ -1,4 +1,4 @@
-import { App, Modal } from "obsidian";
+import { App, Modal, setIcon } from "obsidian";
 
 interface ConfirmModalOptions {
 	title: string;
@@ -19,7 +19,9 @@ export class ConfirmModal extends Modal {
 	onOpen(): void {
 		const { contentEl } = this;
 		contentEl.addClass("el-confirm-modal");
-		contentEl.createEl("h3", { text: this.options.title });
+		const titleRow = contentEl.createEl("h3", { cls: "el-confirm-title" });
+		setIcon(titleRow.createSpan({ cls: "el-confirm-title-icon" }), "alert-triangle");
+		titleRow.createSpan({ text: this.options.title });
 		contentEl.createEl("p", { text: this.options.message });
 
 		const buttons = contentEl.createDiv({ cls: "el-modal-buttons" });

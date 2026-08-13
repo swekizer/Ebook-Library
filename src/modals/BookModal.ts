@@ -89,14 +89,18 @@ export class BookModal extends Modal {
 
 	private buildCoverSection(parent: HTMLElement) {
 		const section = parent.createDiv({ cls: "el-modal-cover-section" });
-		this.coverPreviewEl = section.createDiv({ cls: "el-modal-cover-preview" });
+		const frame = section.createDiv({ cls: "el-modal-cover-frame" });
+		this.coverPreviewEl = frame.createDiv({ cls: "el-modal-cover-preview" });
 		this.renderCoverPreview();
 
-		const changeBtn = section.createEl("button", {
-			cls: "el-modal-cover-btn",
-			text: "Change cover",
+		const changeBtn = frame.createEl("button", {
+			cls: "el-modal-cover-edit-btn",
+			attr: { "aria-label": "Change cover" },
 		});
+		setIcon(changeBtn, "image");
 		changeBtn.addEventListener("click", (evt) => this.showCoverMenu(evt));
+
+		section.createDiv({ cls: "el-modal-cover-hint", text: "Click the icon to change the cover" });
 	}
 
 	private renderCoverPreview() {
@@ -194,6 +198,7 @@ export class BookModal extends Modal {
 	private buildFormSection(parent: HTMLElement) {
 		const form = parent.createDiv({ cls: "el-modal-form" });
 
+		this.addSectionTitle(form, "Book details");
 		this.buildFileField(form);
 		this.buildTextField(form, "Title", this.title, "Book title", (v) => {
 			this.title = v;
@@ -201,12 +206,20 @@ export class BookModal extends Modal {
 		}, (inputEl) => (this.titleInputEl = inputEl));
 		this.buildTextField(form, "Author", this.author, "Author name", (v) => (this.author = v));
 		this.buildCategoryField(form);
+
+		this.addSectionTitle(form, "Organize");
 		this.buildTagsField(form);
 		this.buildDescriptionField(form);
+
+		this.addSectionTitle(form, "Progress & rating");
 		this.buildStatusField(form);
 		this.buildProgressField(form);
 		this.buildTotalPagesField(form);
 		this.buildRatingField(form);
+	}
+
+	private addSectionTitle(parent: HTMLElement, text: string) {
+		parent.createDiv({ cls: "el-form-section-title", text });
 	}
 
 	private buildFileField(form: HTMLElement) {
@@ -426,7 +439,10 @@ export class BookModal extends Modal {
 		const buttons = parent.createDiv({ cls: "el-modal-buttons" });
 
 		if (this.existing) {
-			const deleteBtn = buttons.createEl("button", { cls: "el-btn-danger", text: "Delete" });
+			const deleteBtn = buttons.createEl("button", { cls: "el-btn-danger" });
+			const deleteBtnLabel = deleteBtn.createSpan({ cls: "el-btn-icon-label" });
+			setIcon(deleteBtnLabel.createSpan(), "trash-2");
+			deleteBtnLabel.createSpan({ text: "Delete" });
 			deleteBtn.addEventListener("click", () => {
 				new ConfirmModal(this.plugin.app, {
 					title: "Remove from library",
@@ -445,10 +461,10 @@ export class BookModal extends Modal {
 		const cancelBtn = buttons.createEl("button", { text: "Cancel" });
 		cancelBtn.addEventListener("click", () => this.close());
 
-		const saveBtn = buttons.createEl("button", {
-			cls: "mod-cta",
-			text: this.existing ? "Save changes" : "Add to library",
-		});
+		const saveBtn = buttons.createEl("button", { cls: "mod-cta" });
+		const saveBtnLabel = saveBtn.createSpan({ cls: "el-btn-icon-label" });
+		setIcon(saveBtnLabel.createSpan(), this.existing ? "check" : "plus");
+		saveBtnLabel.createSpan({ text: this.existing ? "Save changes" : "Add to library" });
 		saveBtn.addEventListener("click", () => {
 			void this.handleSave();
 		});

@@ -2,10 +2,12 @@ import { ItemView, Menu, TFile, WorkspaceLeaf, setIcon } from "obsidian";
 import type EbookLibraryPlugin from "../main";
 import {
 	Book,
+	CardSize,
 	CATEGORY_META,
 	CATEGORY_ORDER,
 	CategoryFilter,
 	SortKey,
+	STATUS_META,
 	StatusFilter,
 } from "../types";
 import { BookModal } from "../modals/BookModal";
@@ -29,6 +31,14 @@ const STATUS_TABS: { value: StatusFilter; label: string }[] = [
 	{ value: "completed", label: "Completed" },
 ];
 
+const CARD_SIZES: { value: CardSize; label: string; aria: string }[] = [
+	{ value: "small", label: "S", aria: "Small cards" },
+	{ value: "medium", label: "M", aria: "Medium cards" },
+	{ value: "large", label: "L", aria: "Large cards" },
+];
+
+const CONTINUE_RAIL_LIMIT = 8;
+
 export class LibraryView extends ItemView {
 	private plugin: EbookLibraryPlugin;
 
@@ -43,7 +53,11 @@ export class LibraryView extends ItemView {
 	private tagSelectEl!: HTMLSelectElement;
 	private sortSelectEl!: HTMLSelectElement;
 	private sortDirBtn!: HTMLElement;
+	private densityGroupEl!: HTMLElement;
 	private tabsEl!: HTMLElement;
+	private resultsCountEl!: HTMLElement;
+	private continueSectionEl!: HTMLElement;
+	private continueRailEl!: HTMLElement;
 	private gridEl!: HTMLElement;
 
 	constructor(leaf: WorkspaceLeaf, plugin: EbookLibraryPlugin) {
@@ -79,18 +93,23 @@ export class LibraryView extends ItemView {
 	private buildLayout() {
 		const root = this.contentEl;
 
-		const header = root.createDiv({ cls: "el-header" });
+		const hero = root.createDiv({ cls: "el-hero" });
+		const header = hero.createDiv({ cls: "el-header" });
 		const headerTop = header.createDiv({ cls: "el-header-top" });
-		this.headerTitleEl = headerTop.createEl("h1", {
+
+		const titleGroup = headerTop.createDiv({ cls: "el-header-title-group" });
+		setIcon(titleGroup.createDiv({ cls: "el-icon-badge" }), "library");
+		const titleTextWrap = titleGroup.createDiv();
+		this.headerTitleEl = titleTextWrap.createEl("h1", {
 			cls: "el-title",
 			text: this.plugin.settings.libraryTitle,
 		});
+		this.statsEl = titleTextWrap.createDiv({ cls: "el-stats" });
+
 		const addBtn = headerTop.createEl("button", { cls: "el-add-btn" });
 		setIcon(addBtn.createSpan({ cls: "el-add-btn-icon" }), "plus");
 		addBtn.createSpan({ text: "Add Book" });
 		addBtn.addEventListener("click", () => this.openAddModal());
-
-		this.statsEl = header.createDiv({ cls: "el-stats" });
 
 		const toolbar = root.createDiv({ cls: "el-toolbar" });
 
@@ -108,6 +127,8 @@ export class LibraryView extends ItemView {
 				this.render();
 			}, 150)
 		);
+
+		toolbar.createDiv({ cls: "el-toolbar-divider" });
 
 		const filters = toolbar.createDiv({ cls: "el-filters" });
 
@@ -149,15 +170,46 @@ export class LibraryView extends ItemView {
 			this.render();
 		});
 
+		this.densityGroupEl = filters.createDiv({
+			cls: "el-density-toggle",
+			attr: { role: "group", "aria-label": "Card size" },
+		});
+		for (const size of CARD_SIZES) {
+			const btn = this.densityGroupEl.createEl("button", {
+				cls: "el-density-btn",
+				text: size.label,
+				attr: { "aria-label": size.aria },
+			});
+			btn.dataset.size = size.value;
+			btn.addEventListener("click", () => {
+				if (this.plugin.settings.cardSize === size.value) return;
+				this.plugin.settings.cardSize = size.value;
+				void this.plugin.saveSettings();
+				this.render();
+			});
+		}
+
 		this.tabsEl = root.createDiv({ cls: "el-tabs" });
 		for (const tab of STATUS_TABS) {
-			const btn = this.tabsEl.createEl("button", { cls: "el-tab", text: tab.label });
+			const btn = this.tabsEl.createEl("button", { cls: "el-tab" });
 			btn.dataset.value = tab.value;
+			btn.createSpan({ cls: "el-tab-label", text: tab.label });
+			btn.createSpan({ cls: "el-tab-count" });
 			btn.addEventListener("click", () => {
 				this.statusFilter = tab.value;
 				this.render();
 			});
 		}
+
+		this.resultsCountEl = root.createDiv({ cls: "el-results-count" });
+
+		this.continueSectionEl = root.createDiv({ cls: "el-continue-section" });
+		const sectionHeader = this.continueSectionEl.createDiv({ cls: "el-section-header" });
+		const sectionTitle = sectionHeader.createDiv({ cls: "el-section-title" });
+		setIcon(sectionTitle.createSpan({ cls: "el-section-title-icon" }), "book-open");
+		sectionTitle.createSpan({ text: "Continue reading" });
+		sectionHeader.createDiv({ cls: "el-section-subtitle", text: "Pick up where you left off" });
+		this.continueRailEl = this.continueSectionEl.createDiv({ cls: "el-continue-rail" });
 
 		this.gridEl = root.createDiv({ cls: "el-grid" });
 	}
@@ -169,6 +221,7 @@ export class LibraryView extends ItemView {
 		this.populateTagOptions();
 		this.updateActiveTab();
 		this.updateSortDirButton();
+		this.updateDensityToggle();
 		this.renderStats();
 
 		this.gridEl.empty();
@@ -178,6 +231,9 @@ export class LibraryView extends ItemView {
 		const totalBooks = this.plugin.settings.books.length;
 		const books = this.getFilteredSortedBooks();
 
+		this.renderResultsCount(totalBooks, books.length);
+		this.renderContinueSection();
+
 		if (totalBooks === 0) {
 			this.renderEmptyState(true);
 			return;
@@ -186,9 +242,9 @@ export class LibraryView extends ItemView {
 			this.renderEmptyState(false);
 			return;
 		}
-		for (const book of books) {
-			this.gridEl.appendChild(this.buildCard(book));
-		}
+		books.forEach((book, index) => {
+			this.gridEl.appendChild(this.buildCard(book, index));
+		});
 	}
 
 	private populateTagOptions() {
@@ -204,9 +260,13 @@ export class LibraryView extends ItemView {
 	}
 
 	private updateActiveTab() {
+		const counts = this.getStatusCounts();
 		this.tabsEl.querySelectorAll(".el-tab").forEach((el) => {
 			const btn = el as HTMLElement;
-			btn.toggleClass("is-active", btn.dataset.value === this.statusFilter);
+			const value = (btn.dataset.value ?? "all") as StatusFilter;
+			btn.toggleClass("is-active", value === this.statusFilter);
+			const countEl = btn.querySelector(".el-tab-count");
+			if (countEl) countEl.textContent = String(counts[value] ?? 0);
 		});
 	}
 
@@ -216,26 +276,65 @@ export class LibraryView extends ItemView {
 		this.sortDirBtn.toggleClass("is-desc", desc);
 	}
 
-	private renderStats() {
-		const books = this.plugin.settings.books;
-		const total = books.length;
-		if (total === 0) {
-			this.statsEl.setText("");
-			return;
-		}
-		const reading = books.filter((b) => b.status === "reading").length;
-		const completed = books.filter((b) => b.status === "completed").length;
-		this.statsEl.setText(
-			`${total} book${total === 1 ? "" : "s"} \u00b7 ${reading} reading \u00b7 ${completed} completed`
-		);
+	private updateDensityToggle() {
+		this.densityGroupEl.querySelectorAll(".el-density-btn").forEach((el) => {
+			const btn = el as HTMLElement;
+			const isActive = btn.dataset.size === this.plugin.settings.cardSize;
+			btn.toggleClass("is-active", isActive);
+			btn.setAttribute("aria-pressed", String(isActive));
+		});
 	}
 
-	private getFilteredSortedBooks(): Book[] {
+	private addStatChip(icon: string, value: string, label: string, extraCls?: string) {
+		const chip = this.statsEl.createDiv({ cls: extraCls ? `el-stat-chip ${extraCls}` : "el-stat-chip" });
+		setIcon(chip.createSpan({ cls: "el-stat-chip-icon" }), icon);
+		chip.createEl("strong", { text: value });
+		chip.appendText(` ${label}`);
+		return chip;
+	}
+
+	private renderStats() {
+		this.statsEl.empty();
+		const books = this.plugin.settings.books;
+		const total = books.length;
+		if (total === 0) return;
+
+		const reading = books.filter((b) => b.status === "reading").length;
+		const completed = books.filter((b) => b.status === "completed").length;
+		const pct = Math.round((completed / total) * 100);
+
+		this.addStatChip("library", String(total), total === 1 ? "book" : "books");
+		this.addStatChip("book-open", String(reading), "reading");
+		this.addStatChip("check-circle", String(completed), "completed");
+
+		const ringChip = this.statsEl.createDiv({ cls: "el-stat-chip el-stat-chip-ring" });
+		const ring = ringChip.createDiv({ cls: "el-stat-ring" });
+		ring.setCssStyles({
+			background: `conic-gradient(var(--interactive-accent) ${pct}%, var(--background-modifier-border) 0)`,
+		});
+		ringChip.appendText(`${pct}% complete`);
+	}
+
+	private renderResultsCount(total: number, shown: number) {
+		const filtersActive =
+			this.statusFilter !== "all" ||
+			this.categoryFilter !== "all" ||
+			this.tagFilter !== "all" ||
+			!!this.searchQuery;
+
+		if (total === 0 || !filtersActive) {
+			this.resultsCountEl.setText("");
+			this.resultsCountEl.removeClass("is-visible");
+			return;
+		}
+		this.resultsCountEl.setText(`Showing ${shown} of ${total} ${total === 1 ? "book" : "books"}`);
+		this.resultsCountEl.addClass("is-visible");
+	}
+
+	/** Applies every filter except reading status — used both for the grid and for tab counts. */
+	private getBooksMatchingNonStatusFilters(): Book[] {
 		let books = this.plugin.settings.books.slice();
 
-		if (this.statusFilter !== "all") {
-			books = books.filter((b) => b.status === this.statusFilter);
-		}
 		if (this.categoryFilter !== "all") {
 			books = books.filter((b) => b.category === this.categoryFilter);
 		}
@@ -251,6 +350,25 @@ export class LibraryView extends ItemView {
 					b.description.toLowerCase().includes(q) ||
 					b.tags.some((t) => t.toLowerCase().includes(q))
 			);
+		}
+		return books;
+	}
+
+	private getStatusCounts(): Record<StatusFilter, number> {
+		const books = this.getBooksMatchingNonStatusFilters();
+		return {
+			all: books.length,
+			unread: books.filter((b) => b.status === "unread").length,
+			reading: books.filter((b) => b.status === "reading").length,
+			completed: books.filter((b) => b.status === "completed").length,
+		};
+	}
+
+	private getFilteredSortedBooks(): Book[] {
+		let books = this.getBooksMatchingNonStatusFilters();
+
+		if (this.statusFilter !== "all") {
+			books = books.filter((b) => b.status === this.statusFilter);
 		}
 
 		const dir = this.plugin.settings.sortDirection === "asc" ? 1 : -1;
@@ -293,13 +411,71 @@ export class LibraryView extends ItemView {
 		}
 	}
 
+	// ---------- Continue reading rail ----------
+
+	private renderContinueSection() {
+		const isDefaultView =
+			this.statusFilter === "all" &&
+			this.categoryFilter === "all" &&
+			this.tagFilter === "all" &&
+			!this.searchQuery;
+
+		const readingBooks = this.plugin.settings.books
+			.filter((b) => b.status === "reading")
+			.sort((a, b) => (b.lastOpened ?? b.dateModified) - (a.lastOpened ?? a.dateModified))
+			.slice(0, CONTINUE_RAIL_LIMIT);
+
+		const shouldShow = isDefaultView && readingBooks.length > 0;
+		this.continueSectionEl.toggleClass("is-visible", shouldShow);
+		this.continueRailEl.empty();
+		if (!shouldShow) return;
+
+		for (const book of readingBooks) {
+			this.continueRailEl.appendChild(this.buildContinueCard(book));
+		}
+	}
+
+	private buildContinueCard(book: Book): HTMLElement {
+		const card = createDiv({ cls: "el-continue-card" });
+		card.setAttribute("tabindex", "0");
+		card.setAttribute("role", "button");
+		card.setAttribute("aria-label", `Continue reading ${book.title}`);
+
+		const cover = card.createDiv({ cls: "el-continue-cover" });
+		this.renderCover(cover, book);
+
+		const info = card.createDiv({ cls: "el-continue-info" });
+		info.createDiv({ cls: "el-continue-title", text: book.title });
+		if (book.author) info.createDiv({ cls: "el-continue-author", text: book.author });
+
+		const progressRow = info.createDiv({ cls: "el-continue-progress-row" });
+		const track = progressRow.createDiv({ cls: "el-continue-progress-track" });
+		track.createDiv({ cls: "el-continue-progress-fill" }).setCssStyles({
+			width: `${clamp(book.progress, 0, 100)}%`,
+		});
+		progressRow.createDiv({
+			cls: "el-continue-progress-label",
+			text: `${Math.round(clamp(book.progress, 0, 100))}% complete`,
+		});
+
+		card.addEventListener("click", () => void this.plugin.openBook(book));
+		card.addEventListener("keydown", (evt) => {
+			if (evt.key === "Enter" || evt.key === " ") {
+				evt.preventDefault();
+				void this.plugin.openBook(book);
+			}
+		});
+		return card;
+	}
+
 	// ---------- Card ----------
 
-	private buildCard(book: Book): HTMLElement {
+	private buildCard(book: Book, index: number): HTMLElement {
 		const card = createDiv({ cls: "el-card" });
 		card.setAttribute("tabindex", "0");
 		card.setAttribute("role", "button");
 		card.setAttribute("aria-label", `Open ${book.title}`);
+		card.setCssStyles({ animationDelay: `${Math.min(index * 25, 400)}ms` });
 
 		const cover = card.createDiv({ cls: "el-card-cover" });
 		this.renderCover(cover, book);
@@ -310,9 +486,13 @@ export class LibraryView extends ItemView {
 			setIcon(badge, "alert-triangle");
 			badge.setAttribute("aria-label", "File not found in vault");
 		} else if (book.status !== "unread") {
+			const meta = STATUS_META[book.status];
 			const badge = cover.createDiv({ cls: `el-badge el-badge-${book.status}` });
-			badge.setText(book.status === "completed" ? "Done" : "Reading");
+			setIcon(badge.createSpan({ cls: "el-badge-icon" }), meta.icon);
+			badge.createSpan({ text: book.status === "completed" ? "Done" : "Reading" });
 		}
+
+		setIcon(cover.createDiv({ cls: "el-card-hover-open", attr: { "aria-hidden": "true" } }), "book-open");
 
 		if (book.progress > 0) {
 			const track = cover.createDiv({ cls: "el-card-progress-track" });
@@ -332,18 +512,28 @@ export class LibraryView extends ItemView {
 		info.createDiv({ cls: "el-card-title", text: book.title });
 		if (book.author) info.createDiv({ cls: "el-card-author", text: book.author });
 
-		if (book.tags.length > 0) {
-			const tagsRow = info.createDiv({ cls: "el-card-tags" });
-			const shown = book.tags.slice(0, 2);
-			for (const tag of shown) {
-				tagsRow.createSpan({ cls: "el-tag-pill", text: tag });
-			}
-			if (book.tags.length > shown.length) {
-				tagsRow.createSpan({
-					cls: "el-tag-pill el-tag-more",
-					text: `+${book.tags.length - shown.length}`,
-				});
-			}
+		const tagsRow = info.createDiv({ cls: "el-card-tags" });
+		const categoryPill = tagsRow.createSpan({ cls: "el-tag-pill el-tag-pill-category" });
+		setIcon(categoryPill.createSpan({ cls: "el-tag-pill-icon" }), CATEGORY_META[book.category].icon);
+		categoryPill.appendText(CATEGORY_META[book.category].label);
+
+		if (book.rating > 0) {
+			tagsRow.createSpan({
+				cls: "el-card-rating",
+				text: "\u2605".repeat(book.rating),
+				attr: { "aria-label": `${book.rating} star rating` },
+			});
+		}
+
+		const shownTags = book.tags.slice(0, 2);
+		for (const tag of shownTags) {
+			tagsRow.createSpan({ cls: "el-tag-pill", text: tag });
+		}
+		if (book.tags.length > shownTags.length) {
+			tagsRow.createSpan({
+				cls: "el-tag-pill el-tag-more",
+				text: `+${book.tags.length - shownTags.length}`,
+			});
 		}
 
 		card.addEventListener("click", () => {
