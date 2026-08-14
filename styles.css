@@ -68,22 +68,23 @@
 	z-index: -1;
 	border-radius: 50%;
 	pointer-events: none;
-	background: color-mix(in srgb, var(--interactive-accent) 45%, transparent);
-	filter: blur(38px);
-	opacity: 0.35;
+	background: color-mix(in srgb, var(--interactive-accent) 60%, transparent);
+	filter: blur(60px);
+	opacity: 0.5;
 }
 .el-hero::before {
-	width: 260px;
-	height: 260px;
-	top: -120px;
-	right: 8%;
+	width: 340px;
+	height: 340px;
+	top: -160px;
+	right: 6%;
 }
 .el-hero::after {
-	width: 180px;
-	height: 180px;
-	top: -40px;
-	right: 26%;
-	opacity: 0.22;
+	width: 240px;
+	height: 240px;
+	top: -60px;
+	right: 24%;
+	opacity: 0.32;
+	background: color-mix(in srgb, var(--interactive-accent) 45%, #a855f7 55%);
 }
 
 .el-header {
@@ -230,10 +231,13 @@
 	gap: 12px;
 	margin-top: 28px;
 	flex-wrap: wrap;
-	background: var(--background-secondary);
-	border: 1px solid var(--background-modifier-border);
+	background: color-mix(in srgb, var(--background-secondary) 70%, transparent);
+	backdrop-filter: blur(12px) saturate(140%);
+	-webkit-backdrop-filter: blur(12px) saturate(140%);
+	border: 1px solid color-mix(in srgb, var(--background-modifier-border) 60%, transparent);
 	border-radius: 16px;
 	padding: 10px 14px;
+	box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06), inset 0 1px 0 rgba(255, 255, 255, 0.06);
 }
 
 .el-search {
@@ -403,16 +407,30 @@
 	font-size: 0.85em;
 	font-weight: 500;
 	cursor: pointer;
-	transition: background 0.15s ease, color 0.15s ease;
+	transition: background 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
+	position: relative;
 }
 .el-tab:hover {
 	color: var(--text-normal);
+	background: color-mix(in srgb, var(--background-modifier-hover) 60%, transparent);
 }
 .el-tab.is-active {
-	background: var(--background-primary);
+	background: linear-gradient(160deg, var(--background-primary), color-mix(in srgb, var(--background-primary) 85%, var(--interactive-accent) 15%));
 	color: var(--text-normal);
-	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
-	font-weight: 600;
+	box-shadow: 0 2px 8px rgba(0, 0, 0, 0.14), 0 0 0 1px color-mix(in srgb, var(--interactive-accent) 20%, transparent);
+	font-weight: 700;
+}
+.el-tab.is-active::after {
+	content: "";
+	position: absolute;
+	bottom: 2px;
+	left: 50%;
+	transform: translateX(-50%);
+	width: 40%;
+	height: 2px;
+	border-radius: 2px;
+	background: var(--interactive-accent);
+	box-shadow: 0 0 6px color-mix(in srgb, var(--interactive-accent) 80%, transparent);
 }
 .el-tab-count {
 	display: inline-flex;
@@ -485,72 +503,116 @@
 
 .el-continue-rail {
 	display: flex;
-	gap: 14px;
+	gap: 16px;
 	margin-top: 16px;
 	overflow-x: auto;
-	padding-bottom: 12px;
+	padding-bottom: 14px;
+	padding-top: 4px;
 	scroll-snap-type: x proximity;
 }
 .el-continue-rail::-webkit-scrollbar {
-	height: 6px;
+	height: 4px;
+}
+.el-continue-rail::-webkit-scrollbar-thumb {
+	background: color-mix(in srgb, var(--interactive-accent) 45%, transparent);
+	border-radius: 4px;
 }
 
+/* ---------- Continue card — vertical portrait layout (like main grid cards) ---------- */
+
 .el-continue-card {
-	flex: 0 0 260px;
+	flex: 0 0 140px;
 	scroll-snap-align: start;
 	display: flex;
-	gap: 12px;
-	background: var(--background-secondary);
-	border: 1px solid var(--background-modifier-border);
-	border-radius: 14px;
-	padding: 12px;
+	flex-direction: column;
+	gap: 0;
+	background: transparent;
+	border: none;
+	border-radius: 12px;
+	padding: 0;
 	cursor: pointer;
 	outline: none;
-	transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+	transition: transform 0.22s ease, box-shadow 0.22s ease;
 	animation: el-fade-in-up 0.35s ease both;
 }
 .el-continue-card:hover,
 .el-continue-card:focus-visible {
-	transform: translateY(-3px);
-	box-shadow: 0 14px 26px -10px rgba(0, 0, 0, 0.3);
-	border-color: color-mix(in srgb, var(--interactive-accent) 45%, var(--background-modifier-border));
+	transform: translateY(-5px);
 }
 
+/* Cover — 2:3 portrait aspect ratio, same as main grid cards */
 .el-continue-cover {
 	position: relative;
-	width: 62px;
-	height: 92px;
-	border-radius: 8px;
+	width: 100%;
+	aspect-ratio: 2 / 3;
+	height: auto;
+	border-radius: 10px;
 	overflow: hidden;
 	flex-shrink: 0;
 	background: var(--background-modifier-border);
-	box-shadow: 0 4px 10px rgba(0, 0, 0, 0.22);
+	box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25), 0 1px 3px rgba(0, 0, 0, 0.15);
+	transition: box-shadow 0.22s ease, transform 0.22s ease;
+}
+.el-continue-card:hover .el-continue-cover,
+.el-continue-card:focus-visible .el-continue-cover {
+	box-shadow: 0 14px 28px -8px rgba(0, 0, 0, 0.38), 0 0 0 1px color-mix(in srgb, var(--interactive-accent) 30%, transparent);
+	transform: scale(1.02);
+}
+/* Book spine shadow — left-edge dark line mimics a real book */
+.el-continue-cover::before {
+	content: "";
+	position: absolute;
+	top: 0;
+	left: 0;
+	width: 6px;
+	height: 100%;
+	background: linear-gradient(to right, rgba(0,0,0,0.28) 0%, rgba(0,0,0,0) 100%);
+	z-index: 1;
+	pointer-events: none;
 }
 .el-continue-cover.el-cover-placeholder {
-	padding: 6px;
+	padding: 10px;
 }
 .el-continue-cover .el-cover-placeholder-icon {
-	margin-bottom: 4px;
+	margin-bottom: 6px;
 }
 .el-continue-cover .el-cover-placeholder-icon svg {
-	width: 15px;
-	height: 15px;
+	width: 20px;
+	height: 20px;
 }
 .el-continue-cover .el-cover-placeholder-title {
-	font-size: 0.6em;
-	-webkit-line-clamp: 3;
-	line-clamp: 3;
+	font-size: 0.72em;
+	-webkit-line-clamp: 4;
+	line-clamp: 4;
 }
 
+/* Progress bar along the bottom edge of the cover */
+.el-continue-progress-track {
+	position: absolute;
+	bottom: 0;
+	left: 0;
+	right: 0;
+	height: 5px;
+	background: rgba(0, 0, 0, 0.30);
+	z-index: 2;
+}
+.el-continue-progress-fill {
+	height: 100%;
+	border-radius: 0;
+	background: linear-gradient(90deg, var(--interactive-accent), color-mix(in srgb, var(--interactive-accent) 55%, #ffffff 30%));
+	box-shadow: 0 0 6px color-mix(in srgb, var(--interactive-accent) 70%, transparent);
+}
+
+/* Info section — sits below the cover */
 .el-continue-info {
 	display: flex;
 	flex-direction: column;
 	min-width: 0;
-	flex: 1;
+	padding: 8px 2px 0;
 }
 .el-continue-title {
-	font-weight: 650;
-	font-size: 0.9em;
+	font-weight: 700;
+	font-size: 0.86em;
 	line-height: 1.3;
 	color: var(--text-normal);
 	display: -webkit-box;
@@ -560,33 +622,23 @@
 	overflow: hidden;
 }
 .el-continue-author {
-	font-size: 0.78em;
+	font-size: 0.76em;
 	color: var(--text-muted);
 	margin-top: 2px;
 	white-space: nowrap;
 	overflow: hidden;
 	text-overflow: ellipsis;
+	font-style: italic;
 }
 .el-continue-progress-row {
-	margin-top: auto;
 	display: flex;
 	flex-direction: column;
-	gap: 5px;
-	padding-top: 8px;
-}
-.el-continue-progress-track {
-	height: 5px;
-	border-radius: 3px;
-	background: var(--background-modifier-border);
-	overflow: hidden;
-}
-.el-continue-progress-fill {
-	height: 100%;
-	border-radius: 3px;
-	background: linear-gradient(90deg, var(--interactive-accent), color-mix(in srgb, var(--interactive-accent) 55%, #ffffff 30%));
+	gap: 4px;
+	padding-top: 6px;
+	margin-top: auto;
 }
 .el-continue-progress-label {
-	font-size: 0.72em;
+	font-size: 0.70em;
 	color: var(--text-faint);
 	font-weight: 600;
 }
@@ -633,12 +685,12 @@
 	border-radius: 12px;
 	overflow: hidden;
 	background: var(--background-secondary);
-	box-shadow: 0 1px 2px rgba(0, 0, 0, 0.15), 0 6px 16px rgba(0, 0, 0, 0.12);
-	transition: transform 0.2s ease, box-shadow 0.2s ease;
+	box-shadow: 0 2px 4px rgba(0, 0, 0, 0.14), 0 8px 20px rgba(0, 0, 0, 0.14);
+	transition: transform 0.25s ease, box-shadow 0.25s ease;
 }
 .el-card:hover .el-card-cover {
-	transform: translateY(-5px) scale(1.02);
-	box-shadow: 0 18px 32px -10px rgba(0, 0, 0, 0.32), 0 0 0 1px color-mix(in srgb, var(--interactive-accent) 25%, transparent);
+	transform: translateY(-6px) scale(1.025);
+	box-shadow: 0 22px 38px -10px rgba(0, 0, 0, 0.36), 0 0 0 1px color-mix(in srgb, var(--interactive-accent) 30%, transparent), 0 0 20px -8px color-mix(in srgb, var(--interactive-accent) 25%, transparent);
 }
 .el-card-cover::after {
 	content: "";
@@ -769,14 +821,14 @@
 	left: 0;
 	right: 0;
 	bottom: 0;
-	height: 6px;
-	background: rgba(0, 0, 0, 0.35);
+	height: 7px;
+	background: rgba(0, 0, 0, 0.38);
 	z-index: 2;
 }
 .el-card-progress-fill {
 	height: 100%;
 	background: linear-gradient(90deg, var(--interactive-accent), color-mix(in srgb, var(--interactive-accent) 55%, #ffffff 30%));
-	box-shadow: 0 0 8px color-mix(in srgb, var(--interactive-accent) 70%, transparent);
+	box-shadow: 0 0 10px 1px color-mix(in srgb, var(--interactive-accent) 75%, transparent);
 }
 
 .el-card-more {
@@ -805,13 +857,14 @@
 }
 
 .el-card-info {
-	margin-top: 10px;
-	padding: 0 2px;
+	margin-top: 11px;
+	padding: 0 3px;
 }
 .el-card-title {
-	font-weight: 650;
+	font-weight: 700;
 	font-size: 0.92em;
-	line-height: 1.32;
+	letter-spacing: -0.01em;
+	line-height: 1.3;
 	color: var(--text-normal);
 	display: -webkit-box;
 	-webkit-line-clamp: 2;
@@ -820,12 +873,13 @@
 	overflow: hidden;
 }
 .el-card-author {
-	font-size: 0.8em;
+	font-size: 0.79em;
 	color: var(--text-muted);
-	margin-top: 2px;
+	margin-top: 3px;
 	white-space: nowrap;
 	overflow: hidden;
 	text-overflow: ellipsis;
+	font-style: italic;
 }
 .el-card-tags {
 	display: flex;
@@ -835,12 +889,18 @@
 	margin-top: 7px;
 }
 .el-tag-pill {
-	font-size: 0.68em;
-	padding: 2px 8px;
+	font-size: 0.70em;
+	padding: 2px 9px;
 	border-radius: 20px;
 	background: var(--background-modifier-hover);
+	border: 1px solid color-mix(in srgb, var(--background-modifier-border) 70%, transparent);
 	color: var(--text-muted);
 	white-space: nowrap;
+	transition: color 0.12s ease, border-color 0.12s ease;
+}
+.el-tag-pill:hover {
+	color: var(--interactive-accent);
+	border-color: color-mix(in srgb, var(--interactive-accent) 35%, transparent);
 }
 .el-tag-pill-category {
 	display: inline-flex;
@@ -882,14 +942,15 @@
 	animation: el-fade-in-up 0.4s ease both;
 }
 .el-empty-icon {
-	width: 64px;
-	height: 64px;
+	width: 70px;
+	height: 70px;
 	display: flex;
 	align-items: center;
 	justify-content: center;
 	border-radius: 50%;
-	background: linear-gradient(150deg, color-mix(in srgb, var(--interactive-accent) 18%, var(--background-secondary)), var(--background-secondary));
-	border: 1px solid var(--background-modifier-border);
+	background: linear-gradient(150deg, color-mix(in srgb, var(--interactive-accent) 30%, var(--background-secondary)), var(--background-secondary));
+	border: 1px solid color-mix(in srgb, var(--interactive-accent) 25%, var(--background-modifier-border));
+	box-shadow: 0 0 24px color-mix(in srgb, var(--interactive-accent) 20%, transparent), 0 4px 12px rgba(0,0,0,0.12);
 	margin-bottom: 18px;
 	color: var(--interactive-accent);
 }
@@ -942,7 +1003,10 @@
 	height: 270px;
 	border-radius: 12px;
 	overflow: hidden;
-	box-shadow: 0 10px 24px -6px rgba(0, 0, 0, 0.32);
+	box-shadow:
+		-4px 0 8px rgba(0, 0, 0, 0.22),
+		0 12px 28px -6px rgba(0, 0, 0, 0.36),
+		2px 0 0 rgba(255, 255, 255, 0.06);
 }
 .el-modal-cover-img {
 	width: 100%;
@@ -988,19 +1052,36 @@
 }
 
 .el-form-section-title {
-	font-size: 0.72em;
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	font-size: 0.78em;
 	font-weight: 700;
-	text-transform: uppercase;
-	letter-spacing: 0.06em;
-	color: var(--text-faint);
-	margin: 22px 0 12px;
-	padding-top: 16px;
-	border-top: 1px solid var(--background-modifier-border);
+	letter-spacing: 0.01em;
+	color: var(--text-muted);
+	margin: 24px 0 12px;
+	padding-top: 0;
+	border-top: none;
+}
+.el-form-section-title::before {
+	content: "";
+	display: inline-block;
+	width: 8px;
+	height: 8px;
+	border-radius: 50%;
+	background: var(--interactive-accent);
+	box-shadow: 0 0 6px color-mix(in srgb, var(--interactive-accent) 60%, transparent);
+	flex-shrink: 0;
+}
+.el-form-section-title::after {
+	content: "";
+	flex: 1;
+	height: 1px;
+	background: var(--background-modifier-border);
+	margin-left: 4px;
 }
 .el-form-section-title:first-child {
 	margin-top: 0;
-	padding-top: 0;
-	border-top: none;
 }
 
 .el-field {
@@ -1137,24 +1218,25 @@
 
 .el-star-rating {
 	display: inline-flex;
-	gap: 6px;
+	gap: 8px;
 }
 .el-star {
 	display: inline-flex;
 	color: var(--background-modifier-border);
 	cursor: pointer;
-	transition: transform 0.12s ease, color 0.12s ease;
+	transition: transform 0.14s cubic-bezier(0.34, 1.56, 0.64, 1), color 0.14s ease;
 }
 .el-star svg {
-	width: 20px;
-	height: 20px;
+	width: 22px;
+	height: 22px;
 }
 .el-star.is-filled {
 	color: #f5b400;
+	filter: drop-shadow(0 0 4px rgba(245, 180, 0, 0.45));
 }
 .el-star:hover {
 	color: #f5b400;
-	transform: scale(1.18);
+	transform: scale(1.25);
 }
 
 .el-progress-label {
@@ -1280,4 +1362,22 @@
 		flex-direction: column;
 		align-items: center;
 	}
+}
+
+/* ==========================================================================
+   Scrollbar
+   ========================================================================== */
+
+.ebook-library-view::-webkit-scrollbar {
+	width: 5px;
+}
+.ebook-library-view::-webkit-scrollbar-track {
+	background: transparent;
+}
+.ebook-library-view::-webkit-scrollbar-thumb {
+	background: color-mix(in srgb, var(--interactive-accent) 40%, var(--background-modifier-border));
+	border-radius: 10px;
+}
+.ebook-library-view::-webkit-scrollbar-thumb:hover {
+	background: color-mix(in srgb, var(--interactive-accent) 65%, var(--background-modifier-border));
 }

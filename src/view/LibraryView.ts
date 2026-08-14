@@ -441,22 +441,30 @@ export class LibraryView extends ItemView {
 		card.setAttribute("role", "button");
 		card.setAttribute("aria-label", `Continue reading ${book.title}`);
 
+		// Cover — portrait 2:3, with progress bar embedded at bottom edge
 		const cover = card.createDiv({ cls: "el-continue-cover" });
 		this.renderCover(cover, book);
 
+		// Progress track sits inside the cover (absolutely positioned via CSS)
+		if (book.progress > 0) {
+			const track = cover.createDiv({ cls: "el-continue-progress-track" });
+			track.createDiv({ cls: "el-continue-progress-fill" }).setCssStyles({
+				width: `${clamp(book.progress, 0, 100)}%`,
+			});
+		}
+
+		// Info below the cover
 		const info = card.createDiv({ cls: "el-continue-info" });
 		info.createDiv({ cls: "el-continue-title", text: book.title });
 		if (book.author) info.createDiv({ cls: "el-continue-author", text: book.author });
 
-		const progressRow = info.createDiv({ cls: "el-continue-progress-row" });
-		const track = progressRow.createDiv({ cls: "el-continue-progress-track" });
-		track.createDiv({ cls: "el-continue-progress-fill" }).setCssStyles({
-			width: `${clamp(book.progress, 0, 100)}%`,
-		});
-		progressRow.createDiv({
-			cls: "el-continue-progress-label",
-			text: `${Math.round(clamp(book.progress, 0, 100))}% complete`,
-		});
+		if (book.progress > 0) {
+			const progressRow = info.createDiv({ cls: "el-continue-progress-row" });
+			progressRow.createDiv({
+				cls: "el-continue-progress-label",
+				text: `${Math.round(clamp(book.progress, 0, 100))}% complete`,
+			});
+		}
 
 		card.addEventListener("click", () => void this.plugin.openBook(book));
 		card.addEventListener("keydown", (evt) => {
