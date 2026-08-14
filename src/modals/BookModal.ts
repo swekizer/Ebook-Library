@@ -1,4 +1,4 @@
-import { Menu, Modal, Notice, SliderComponent, TFile, setIcon } from "obsidian";
+import { Menu, Modal, Notice, TFile, setIcon } from "obsidian";
 import type EbookLibraryPlugin from "../main";
 import {
 	Book,
@@ -41,8 +41,6 @@ export class BookModal extends Modal {
 	private coverPreviewEl!: HTMLElement;
 	private tagsChipsEl!: HTMLElement;
 	private starsEl!: HTMLElement;
-	private progressLabelEl!: HTMLElement;
-	private progressSlider?: SliderComponent;
 	private statusDropdownEl?: HTMLSelectElement;
 
 	constructor(
@@ -213,7 +211,6 @@ export class BookModal extends Modal {
 
 		this.addSectionTitle(form, "Progress & rating");
 		this.buildStatusField(form);
-		this.buildProgressField(form);
 		this.buildTotalPagesField(form);
 		this.buildRatingField(form);
 	}
@@ -371,30 +368,7 @@ export class BookModal extends Modal {
 		this.statusDropdownEl = select;
 		select.addEventListener("change", () => {
 			this.status = select.value as ReadingStatus;
-			if (this.status === "unread") this.progress = 0;
-			if (this.status === "completed") this.progress = 100;
-			this.progressSlider?.setValue(this.progress);
-			this.progressLabelEl?.setText(`${this.progress}%`);
 		});
-	}
-
-	private buildProgressField(form: HTMLElement) {
-		const row = form.createDiv({ cls: "el-field" });
-		row.createDiv({ cls: "el-field-label", text: "Progress" });
-		const control = row.createDiv({ cls: "el-field-control el-field-control-row" });
-		this.progressLabelEl = control.createSpan({ cls: "el-progress-label", text: `${this.progress}%` });
-		const sliderWrap = control.createDiv({ cls: "el-slider-wrap" });
-		this.progressSlider = new SliderComponent(sliderWrap)
-			.setLimits(0, 100, 1)
-			.setValue(this.progress)
-			.onChange((value) => {
-				this.progress = value;
-				this.progressLabelEl.setText(`${value}%`);
-				if (value === 0) this.status = "unread";
-				else if (value === 100) this.status = "completed";
-				else this.status = "reading";
-				if (this.statusDropdownEl) this.statusDropdownEl.value = this.status;
-			});
 	}
 
 	private buildTotalPagesField(form: HTMLElement) {
@@ -490,7 +464,7 @@ export class BookModal extends Modal {
 			tags: this.tags,
 			category: this.category,
 			status: this.status,
-			progress: clamp(this.progress, 0, 100),
+			progress: this.status === "completed" ? 100 : 0,
 			rating: this.rating,
 			totalPages: this.totalPages,
 			lastOpened: this.existing?.lastOpened ?? null,
