@@ -6,10 +6,7 @@ Ebook Library gives your books, manga, magazines, articles, comics, PDFs, and do
 
 ![Ebook Library in Obsidian](https://img.shields.io/badge/Obsidian-Plugin-7c3aed)
 
-<!-- Screenshot suggestion: Add an overview screenshot here.
-Suggested file: images/library-overview.png
-Description: The Ebook Library view showing the title, search and filter toolbar,
-status tabs, Continue Reading section, and a grid of book covers. -->
+<img width="1775" height="992" alt="image" src="https://github.com/user-attachments/assets/46900659-00ca-4b97-8efe-344a16562529" />
 
 ## Why you'll love it
 
@@ -27,10 +24,7 @@ status tabs, Continue Reading section, and a grid of book covers. -->
 
 Add a cover from your vault or use an image URL. If a book does not have a cover, Ebook Library creates an attractive gradient placeholder with a category icon, so your library never looks unfinished.
 
-<!-- Screenshot suggestion: Add a cover-grid screenshot here.
-Suggested file: images/book-grid.png
-Description: A close-up of the library grid showing book covers, titles, authors,
-category labels, reading statuses, and the three-dot card menu. -->
+<img width="1015" height="520" alt="image" src="https://github.com/user-attachments/assets/ff26bc09-eed7-42f8-9200-66fe41ef5904" />
 
 Each card shows the information you care about at a glance:
 
@@ -49,10 +43,7 @@ Give each title the context it deserves with:
 - Unread, Reading, and Completed statuses
 - Optional total page counts
 
-<!-- Screenshot suggestion: Add an Add/Edit Book screenshot here.
-Suggested file: images/book-details.png
-Description: The Add Book or Edit Book window showing the cover preview, title,
-author, category, tags, description, reading status, total pages, and rating fields. -->
+<img width="722" height="930" alt="image" src="https://github.com/user-attachments/assets/271b73f3-0b1a-4be9-ae2f-1a38e341c9f3" />
 
 ### Fast browsing
 
@@ -64,19 +55,17 @@ Use the library toolbar to:
 - Sort by title, author, date added, recently opened, or reading progress
 - Choose a compact, comfortable, or spacious card size
 
-<!-- Screenshot suggestion: Add a search and filters screenshot here.
-Suggested file: images/search-and-filters.png
-Description: The library toolbar with the search field, category and tag filters,
-sort controls, card-size controls, and status tabs being used to narrow a collection. -->
+<img width="1727" height="971" alt="image" src="https://github.com/user-attachments/assets/0d1e2a50-2f8d-4d03-b0eb-b3ecb001dc9d" />
+<img width="1727" height="982" alt="image" src="https://github.com/user-attachments/assets/e4606f1c-91d2-4675-a6eb-e3e149733a04" />
+
 
 ### Open and manage your books
 
 Click a cover to open the file in Obsidian. For formats Obsidian cannot display, you can open the file in your operating system's default application. The card menu also lets you edit details, update reading status, reveal files on desktop, or remove an entry without deleting the original file.
 
-<!-- Screenshot suggestion: Add a Continue Reading screenshot here.
-Suggested file: images/continue-reading.png
-Description: The Continue Reading card highlighting the current reading title,
-cover, author, last-opened information, and Open book action. -->
+<img width="600" height="257" alt="image" src="https://github.com/user-attachments/assets/a07a6150-1104-4bfe-8dd0-4b48185ed276" />
+<img width="245" height="251" alt="image" src="https://github.com/user-attachments/assets/ac13f2d5-b933-4995-a768-975387bb56c6" />
+
 
 ### Safe and portable
 
@@ -129,10 +118,7 @@ Open **Settings → Ebook Library** to:
 - Export a JSON backup of your library
 - Clear the catalog when you want to start over
 
-<!-- Screenshot suggestion: Add a settings screenshot here.
-Suggested file: images/settings.png
-Description: The Ebook Library settings tab showing library title, card size,
-startup behavior, export, and clear-library controls. -->
+<img width="1150" height="901" alt="image" src="https://github.com/user-attachments/assets/c9d63451-8137-4246-b790-0b57129de672" />
 
 Clearing the catalog removes entries from Ebook Library only. It does not delete the underlying files from your vault.
 
