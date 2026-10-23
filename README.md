@@ -4,6 +4,8 @@ Turn the files in your Obsidian vault into a beautiful, personal reading library
 
 Ebook Library gives your books, manga, magazines, articles, comics, PDFs, and documents a polished cover-based home inside Obsidian. Organize everything in one place, see what you are reading, and open any title with a click.
 
+Instantly create an issue on GitHub if you face any difficulty, UI issues or if you want new feature. Your reviews help me the most.
+
 ![Ebook Library in Obsidian](https://img.shields.io/badge/Obsidian-Plugin-7c3aed)
 
 <img width="1775" height="992" alt="image" src="https://github.com/user-attachments/assets/46900659-00ca-4b97-8efe-344a16562529" />
