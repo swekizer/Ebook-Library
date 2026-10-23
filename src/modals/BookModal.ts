@@ -40,6 +40,7 @@ export class BookModal extends Modal {
 	private titleInputEl!: HTMLInputElement;
 	private coverPreviewEl!: HTMLElement;
 	private tagsChipsEl!: HTMLElement;
+	private tagsInputEl!: HTMLInputElement;
 	private starsEl!: HTMLElement;
 	private statusDropdownEl?: HTMLSelectElement;
 
@@ -292,20 +293,24 @@ export class BookModal extends Modal {
 		const control = row.createDiv({ cls: "el-field-control" });
 		const field = control.createDiv({ cls: "el-tags-field" });
 		this.tagsChipsEl = field.createDiv({ cls: "el-tags-chips" });
-		const tagInput = field.createEl("input", {
+		this.tagsInputEl = field.createEl("input", {
 			cls: "el-tags-input",
 			type: "text",
 			placeholder: "Add a tag...",
 		});
-		tagInput.addEventListener("keydown", (evt) => {
+		this.tagsInputEl.addEventListener("keydown", (evt) => {
 			if (evt.key === "Enter" || evt.key === ",") {
 				evt.preventDefault();
-				this.addTag(tagInput.value);
-				tagInput.value = "";
-			} else if (evt.key === "Backspace" && tagInput.value === "" && this.tags.length > 0) {
+				this.addTag(this.tagsInputEl.value);
+				this.tagsInputEl.value = "";
+			} else if (evt.key === "Backspace" && this.tagsInputEl.value === "" && this.tags.length > 0) {
 				this.tags.pop();
 				this.renderTagChips();
 			}
+		});
+		this.tagsInputEl.addEventListener("blur", () => {
+			this.addTag(this.tagsInputEl.value);
+			this.tagsInputEl.value = "";
 		});
 		this.renderTagChips();
 
@@ -440,11 +445,13 @@ export class BookModal extends Modal {
 		setIcon(saveBtnLabel.createSpan(), this.existing ? "check" : "plus");
 		saveBtnLabel.createSpan({ text: this.existing ? "Save changes" : "Add to library" });
 		saveBtn.addEventListener("click", () => {
-			void this.handleSave();
+			void this.handleSave(saveBtn);
 		});
 	}
 
-	private async handleSave() {
+	private async handleSave(saveBtn: HTMLButtonElement) {
+		this.addTag(this.tagsInputEl.value);
+
 		if (!this.filePath.trim()) {
 			new Notice("Please choose a book file");
 			return;
@@ -454,6 +461,7 @@ export class BookModal extends Modal {
 			return;
 		}
 
+		saveBtn.disabled = true;
 		const data: NewBookInput = {
 			filePath: this.filePath.trim(),
 			title: this.title.trim(),
@@ -464,13 +472,20 @@ export class BookModal extends Modal {
 			tags: this.tags,
 			category: this.category,
 			status: this.status,
-			progress: this.status === "completed" ? 100 : 0,
+			progress: this.status === "completed" ? 100 : this.existing?.progress ?? 0,
 			rating: this.rating,
 			totalPages: this.totalPages,
 			lastOpened: this.existing?.lastOpened ?? null,
 		};
 
-		await this.onSubmit(data);
-		this.close();
+		try {
+			await this.onSubmit(data);
+			this.close();
+		} catch (error) {
+			const message = error instanceof Error ? error.message : "Unknown error";
+			new Notice(`Save failed: ${message}`);
+		} finally {
+			saveBtn.disabled = false;
+		}
 	}
 }

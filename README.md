@@ -1,111 +1,169 @@
 # Ebook Library
 
-A beautiful, central library for the books, manga, magazines and documents already living in your Obsidian vault - browse covers, organize with tags, and track reading progress. Inspired by Apple Books, Google Play Books and Kindle.
+Turn the files in your Obsidian vault into a beautiful, personal reading library.
 
-![Obsidian Plugin](https://img.shields.io/badge/Obsidian-Plugin-7c3aed)
+Ebook Library gives your books, manga, magazines, articles, comics, PDFs, and documents a polished cover-based home inside Obsidian. Organize everything in one place, see what you are reading, and open any title with a click.
+
+![Ebook Library in Obsidian](https://img.shields.io/badge/Obsidian-Plugin-7c3aed)
+
+<!-- Screenshot suggestion: Add an overview screenshot here.
+Suggested file: images/library-overview.png
+Description: The Ebook Library view showing the title, search and filter toolbar,
+status tabs, Continue Reading section, and a grid of book covers. -->
+
+## Why you'll love it
+
+- **A beautiful library view** - Browse your collection in a responsive cover grid inspired by modern reading apps.
+- **Keep your files where they are** - Catalog files already in your vault without moving, copying, or modifying them.
+- **Know what to read next** - A dedicated Continue Reading section brings your latest reading title to the front.
+- **Organize your way** - Add categories, tags, descriptions, ratings, covers, and reading statuses to every title.
+- **Find anything quickly** - Search by title, author, description, or tag, then filter by category, tag, or reading status.
+- **Works with any reading collection** - Catalog PDFs, EPUBs, Markdown notes, CBZ/CBR comics, Word documents, plain text files, and more.
+- **Looks at home in Obsidian** - Designed to work with light mode, dark mode, and community themes.
 
 ## Features
 
-- **A dedicated Library view** - opens as a normal tab in your workspace, with a big page title, live stats (`12 books · 3 reading · 2 completed`), and a responsive cover grid that adapts to any Obsidian theme (light/dark, community themes).
-- **Add Book modal** - set a cover (pick an image already in your vault, or paste a URL), title, author, category, tags, description, rating, total pages, reading status and progress.
-- **Smart placeholder covers** - books without a cover image get a generated gradient cover (colour derived from the title) with a category icon, so the grid always looks polished.
-- **Search, filter & sort** - full-text search across title/author/description/tags, filter by category or tag, filter by status (All / Unread / Reading / Completed), and sort by title, author, date added, recently opened, or progress.
-- **Per-book progress bar** - shown right on the cover, Kindle-style, plus a "Reading"/"Done" badge.
-- **Right-click menu** on every card - open, edit, mark unread/reading/completed, jump progress to 0/25/50/75/100%, reveal in system file explorer, open in the OS default app (great for `.epub`/`.mobi`/`.docx` that Obsidian can't render natively), or remove from the library.
-- **Tags with autocomplete-style suggestions** - reuses tags you've already created across your library.
-- **Handles file moves** - renaming/moving a catalogued file (or its cover image) in the vault automatically updates the library entry.
-- **Backup tools** - export your whole library's metadata to a JSON note from the settings tab.
-- Works on **desktop and mobile** (a couple of desktop-only convenience actions - reveal in explorer / open in default app - are hidden automatically on mobile).
+### Your collection, beautifully presented
 
-Books can be any file type already in your vault: PDF, EPUB, Markdown notes, CBZ/CBR comics, Word docs, plain text, etc. The plugin catalogs them with rich metadata; opening a book asks Obsidian to open the file (using its built-in viewer when one exists, e.g. PDF), and you can always fall back to "Open in default app".
+Add a cover from your vault or use an image URL. If a book does not have a cover, Ebook Library creates an attractive gradient placeholder with a category icon, so your library never looks unfinished.
 
-## Installing
+<!-- Screenshot suggestion: Add a cover-grid screenshot here.
+Suggested file: images/book-grid.png
+Description: A close-up of the library grid showing book covers, titles, authors,
+category labels, reading statuses, and the three-dot card menu. -->
 
-### Manual install (no build needed)
+Each card shows the information you care about at a glance:
 
-The compiled plugin is already built in this folder. Copy the whole `Ebook Library Plugin` folder into your vault's plugin directory, and make sure it's named `ebook-library`:
+- Title and author
+- Category and tags
+- Reading or completed status
+- Recently opened information
 
-```
-<your-vault>/.obsidian/plugins/ebook-library/
-├── main.js
-├── manifest.json
-└── styles.css
-```
+### Simple organization
 
-Then, in Obsidian: **Settings → Community plugins → Reload plugins**, and enable "Ebook Library".
+Give each title the context it deserves with:
 
-### Build from source
+- Categories such as Book, Manga, Magazine, Comic, Document, Article, Audiobook, and Other
+- Tags with suggestions from your existing library
+- Descriptions and ratings
+- Unread, Reading, and Completed statuses
+- Optional total page counts
+
+<!-- Screenshot suggestion: Add an Add/Edit Book screenshot here.
+Suggested file: images/book-details.png
+Description: The Add Book or Edit Book window showing the cover preview, title,
+author, category, tags, description, reading status, total pages, and rating fields. -->
+
+### Fast browsing
+
+Use the library toolbar to:
+
+- Search across your entire collection
+- Filter by category or tag
+- Switch between All, Unread, Reading, and Completed
+- Sort by title, author, date added, recently opened, or reading progress
+- Choose a compact, comfortable, or spacious card size
+
+<!-- Screenshot suggestion: Add a search and filters screenshot here.
+Suggested file: images/search-and-filters.png
+Description: The library toolbar with the search field, category and tag filters,
+sort controls, card-size controls, and status tabs being used to narrow a collection. -->
+
+### Open and manage your books
+
+Click a cover to open the file in Obsidian. For formats Obsidian cannot display, you can open the file in your operating system's default application. The card menu also lets you edit details, update reading status, reveal files on desktop, or remove an entry without deleting the original file.
+
+<!-- Screenshot suggestion: Add a Continue Reading screenshot here.
+Suggested file: images/continue-reading.png
+Description: The Continue Reading card highlighting the current reading title,
+cover, author, last-opened information, and Open book action. -->
+
+### Safe and portable
+
+Ebook Library stores its catalog metadata in Obsidian's normal plugin data. Your book files are not changed, and cover files are referenced rather than duplicated. If you move a cataloged book or cover inside your vault, the library updates its reference automatically.
+
+You can also export your library metadata as a JSON backup from the plugin settings.
+
+## Installation
+
+### From the Obsidian Community Plugins store
+
+1. Open **Settings** in Obsidian.
+2. Go to **Community plugins** and make sure community plugins are enabled.
+3. Select **Browse**.
+4. Search for **Ebook Library**.
+5. Select **Install**, then **Enable**.
+
+Once enabled, open the library from the library icon in the ribbon or from the command palette.
+
+### Manual installation
+
+1. Download the latest release files: `main.js`, `manifest.json`, and `styles.css`.
+2. Create this folder in your vault:
+
+   ```text
+   <your-vault>/.obsidian/plugins/ebook-library/
+   ```
+
+3. Copy the three downloaded files into that folder.
+4. In Obsidian, open **Settings → Community plugins**.
+5. Choose **Reload plugins**, then enable **Ebook Library**.
+
+## Getting started
+
+1. Open Ebook Library from the ribbon icon or the command palette.
+2. Select **+ Add Book**.
+3. Choose a file from your vault.
+4. Add a title, author, cover, category, tags, and reading status.
+5. Select **Add to library**.
+
+After that, click any cover to open it, or use the search and filters to explore your collection.
+
+## Settings
+
+Open **Settings → Ebook Library** to:
+
+- Rename your library
+- Change the card size
+- Open the library automatically when Obsidian starts
+- Export a JSON backup of your library
+- Clear the catalog when you want to start over
+
+<!-- Screenshot suggestion: Add a settings screenshot here.
+Suggested file: images/settings.png
+Description: The Ebook Library settings tab showing library title, card size,
+startup behavior, export, and clear-library controls. -->
+
+Clearing the catalog removes entries from Ebook Library only. It does not delete the underlying files from your vault.
+
+## Privacy and data
+
+Ebook Library is designed to work with the files already in your vault. Book metadata is saved in the plugin's local `data.json` file. The plugin does not upload your library or modify your book files.
+
+External cover URLs are only used when you choose to add a cover from a URL.
+
+## Building from source
+
+This section is for contributors and developers. Regular users do not need to build the plugin.
 
 ```bash
 npm install
-npm run build   # one-off production build -> main.js
-# or
-npm run dev      # watches src/ and rebuilds on save
+npm run build
 ```
 
-## Release a new version
+Use `npm run dev` to rebuild while developing.
 
-This repo supports tag-based GitHub releases for Obsidian.
+## Feedback and feature requests
 
-1. Finish your code changes.
-2. Bump the plugin version without the leading `v` prefix. Obsidian expects release tags like `1.0.2`, not `v1.0.2`.
+If you find a bug or have an idea that would make your reading library better, please open an issue in the repository:
 
-```bash
-npm version patch --tag-version-prefix=""
-```
+<https://github.com/swekizer/Ebook-Library/issues>
 
-Use `minor` or `major` when needed.
+## Roadmap
 
-3. Push the commit and tag:
+Ideas being considered for future versions include:
 
-```bash
-git push origin main --follow-tags
-```
-
-4. GitHub Actions will automatically:
-
-- install dependencies
-- build `main.js`
-- verify the tag matches `manifest.json`
-- create the GitHub release
-- upload `main.js`, `manifest.json`, and `styles.css`
-
-For Obsidian Community Plugins, the release assets should always include exactly those plugin files.
-
-## Using it
-
-- Click the **library** icon in the ribbon, or run **"Ebook Library: Open library"** from the command palette, to open the library view.
-- Click **+ Add Book** (or run **"Ebook Library: Add a new book"**) to catalog a file. Use the folder icon next to "Book file" to browse your vault.
-- Click a cover to open the book. Right-click (or use the `⋮` button on hover) for quick actions.
-- Use the search bar, category/tag dropdowns, sort dropdown, and the Unread/Reading/Completed tabs to slice your library.
-- Visit the plugin's settings tab to rename the library title, change the cover size, enable "open on startup", or export a backup.
-
-## Data storage
-
-Book metadata (title, author, tags, description, progress, etc.) is stored in the plugin's own `data.json` (standard Obsidian plugin storage) - it does not modify your book files or write frontmatter into them. Cover images are referenced either by vault path or external URL; nothing is copied or duplicated.
-
-## Project structure
-
-```
-src/
-├── main.ts                 Plugin entry point, book CRUD, commands, ribbon icon
-├── types.ts                Book/settings types, category & status metadata
-├── utils.ts                Small helpers (ids, dates, placeholder colours, OS integration)
-├── view/
-│   └── LibraryView.ts       The library grid view (header, toolbar, cards, context menu)
-├── modals/
-│   ├── BookModal.ts         Add/Edit book form
-│   ├── FileSuggestModal.ts  Fuzzy file/image picker from the vault
-│   ├── PromptModal.ts       Small single-field prompt (used for cover URLs)
-│   └── ConfirmModal.ts      Generic confirm/cancel dialog
-└── settings/
-    └── SettingsTab.ts       Plugin settings tab
-styles.css                   All plugin styling
-```
-
-## Ideas for later
-
-- Automatic reading-progress tracking for PDFs by hooking into the PDF viewer's page state.
-- Drag-and-drop files straight onto the library to add them.
-- Collections/shelves for grouping books beyond tags.
-- Import covers from an ISBN/title lookup (e.g. Open Library API).
+- Automatic reading-progress tracking for PDFs
+- Drag-and-drop adding
+- Collections or shelves
+- Cover lookup by ISBN or title

@@ -11,7 +11,7 @@ import {
 } from "../types";
 import { BookModal } from "../modals/BookModal";
 import { ConfirmModal } from "../modals/ConfirmModal";
-import { debounce, placeholderGradient } from "../utils";
+import { debounce, formatRelativeDate, placeholderGradient } from "../utils";
 
 export const VIEW_TYPE_LIBRARY = "ebook-library-view";
 
@@ -46,6 +46,7 @@ export class LibraryView extends ItemView {
 
 	private headerTitleEl!: HTMLElement;
 	private statsEl!: HTMLElement;
+	private searchInputEl!: HTMLInputElement;
 	private categorySelectEl!: HTMLSelectElement;
 	private tagSelectEl!: HTMLSelectElement;
 	private sortSelectEl!: HTMLSelectElement;
@@ -111,15 +112,15 @@ export class LibraryView extends ItemView {
 
 		const searchWrap = toolbar.createDiv({ cls: "el-search" });
 		setIcon(searchWrap.createSpan({ cls: "el-search-icon" }), "search");
-		const searchInputEl = searchWrap.createEl("input", {
+		this.searchInputEl = searchWrap.createEl("input", {
 			type: "text",
 			placeholder: "Search books...",
 			cls: "el-search-input",
 		});
-		searchInputEl.addEventListener(
+		this.searchInputEl.addEventListener(
 			"input",
 			debounce(() => {
-				this.searchQuery = searchInputEl.value.trim().toLowerCase();
+				this.searchQuery = this.searchInputEl.value.trim().toLowerCase();
 				this.render();
 			}, 150)
 		);
@@ -172,7 +173,7 @@ export class LibraryView extends ItemView {
 			const btn = this.densityGroupEl.createEl("button", {
 				cls: "el-density-btn",
 				text: size.label,
-				attr: { "aria-label": size.aria },
+				attr: { "aria-label": size.aria, title: size.aria },
 			});
 			btn.dataset.size = size.value;
 			btn.addEventListener("click", () => {
@@ -290,15 +291,11 @@ export class LibraryView extends ItemView {
 		if (featured.author) {
 			info.createDiv({ cls: "el-continue-book-author", text: featured.author });
 		}
-
-		const progressWrap = info.createDiv({ cls: "el-continue-progress-wrap" });
-		const labelRow = progressWrap.createDiv({ cls: "el-continue-progress-labels" });
-		labelRow.createSpan({ text: "Progress" });
-		labelRow.createSpan({ text: `${Math.round(featured.progress)}%` });
-
-		const barTrack = progressWrap.createDiv({ cls: "el-continue-progress-track" });
-		const barFill = barTrack.createDiv({ cls: "el-continue-progress-fill" });
-		barFill.setCssStyles({ width: `${Math.min(100, Math.max(0, featured.progress))}%` });
+		info.createDiv({
+			cls: "el-continue-last-opened",
+			text: featured.lastOpened ? `Opened ${formatRelativeDate(featured.lastOpened)}` : "Not opened yet",
+		});
+		info.createSpan({ cls: "el-continue-action", text: "Open book" });
 
 		card.addEventListener("click", () => {
 			void this.plugin.openBook(featured);
@@ -336,7 +333,9 @@ export class LibraryView extends ItemView {
 
 	private updateSortDirButton() {
 		const desc = this.plugin.settings.sortDirection === "desc";
-		this.sortDirBtn.setAttribute("aria-label", desc ? "Sorted descending" : "Sorted ascending");
+		const label = desc ? "Sorted descending" : "Sorted ascending";
+		this.sortDirBtn.setAttribute("aria-label", label);
+		this.sortDirBtn.setAttribute("title", label);
 		this.sortDirBtn.toggleClass("is-desc", desc);
 	}
 
@@ -470,6 +469,18 @@ export class LibraryView extends ItemView {
 		if (isLibraryEmpty) {
 			const btn = empty.createEl("button", { cls: "el-add-btn", text: "Add your first book" });
 			btn.addEventListener("click", () => this.openAddModal());
+		} else {
+			const btn = empty.createEl("button", { cls: "el-add-btn", text: "Clear filters" });
+			btn.addEventListener("click", () => {
+				this.searchQuery = "";
+				this.statusFilter = "all";
+				this.categoryFilter = "all";
+				this.tagFilter = "all";
+				this.searchInputEl.value = "";
+				this.categorySelectEl.value = "all";
+				this.tagSelectEl.value = "all";
+				this.render();
+			});
 		}
 	}
 
@@ -492,12 +503,14 @@ export class LibraryView extends ItemView {
 			badge.setAttribute("aria-label", "File not found in vault");
 		} else if (book.status === "reading") {
 			cover.createDiv({ cls: "el-badge-reading-top", text: "READING" });
+		} else if (book.status === "completed") {
+			cover.createDiv({ cls: "el-badge-completed-top", text: "DONE" });
 		}
 
 		setIcon(cover.createDiv({ cls: "el-card-hover-open", attr: { "aria-hidden": "true" } }), "book-open");
 
 		const moreBtn = card.createEl("button", { cls: "el-card-more", attr: { "aria-label": "More options" } });
-		setIcon(moreBtn, "more-vertical");
+		moreBtn.setText("⋮");
 		moreBtn.addEventListener("click", (evt) => {
 			evt.stopPropagation();
 			this.showCardMenu(evt, book);
@@ -510,6 +523,9 @@ export class LibraryView extends ItemView {
 		const tagsRow = info.createDiv({ cls: "el-card-tags" });
 		const categoryPill = tagsRow.createSpan({ cls: "el-tag-pill el-tag-pill-category" });
 		categoryPill.appendText(CATEGORY_META[book.category]?.label ?? book.category);
+		if (book.lastOpened) {
+			tagsRow.createSpan({ cls: "el-card-last-opened", text: formatRelativeDate(book.lastOpened) });
+		}
 
 		card.addEventListener("click", () => {
 			void this.plugin.openBook(book);
@@ -638,4 +654,3 @@ export class LibraryView extends ItemView {
 		}).open();
 	}
 }
-
